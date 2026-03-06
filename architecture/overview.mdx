@@ -1,0 +1,253 @@
+---
+title: Architecture Overview
+description: High-level overview of PhotoBoard's architectural design and project structure
+---
+
+## Project Structure
+
+PhotoBoard follows a feature-based modular architecture organized around Clean Architecture principles. The codebase is structured to separate concerns, promote testability, and enable scalability.
+
+### Directory Organization
+
+```
+lib/
+├── core/                    # Shared services and utilities
+│   └── services/
+│       └── camera_service.dart
+├── features/                # Feature modules
+│   ├── auth/               # Authentication feature (future)
+│   └── posts/              # Posts feature module
+│       ├── data/           # Data layer
+│       │   └── repositories/
+│       │       └── post_repository.dart
+│       ├── domain/         # Domain layer
+│       │   └── models/
+│       │       └── post.dart
+│       └── presentation/   # Presentation layer
+│           ├── providers/
+│           │   └── post_provider.dart
+│           ├── screens/
+│           │   ├── home_screen.dart
+│           │   └── confirmation_screen.dart
+│           └── widgets/
+│               └── post_card.dart
+└── main.dart               # Application entry point
+```
+
+## Architectural Layers
+
+PhotoBoard implements a three-layer architecture:
+
+<CardGroup cols={3}>
+  <Card title="Domain Layer" icon="cube" color="#8B5CF6">
+    Pure business logic and data models with no external dependencies
+  </Card>
+  <Card title="Data Layer" icon="database" color="#6366F1">
+    Data sources, repositories, and API communication
+  </Card>
+  <Card title="Presentation Layer" icon="window" color="#EC4899">
+    UI components, state management, and user interactions
+  </Card>
+</CardGroup>
+
+## Feature-Based Modularization
+
+### Posts Feature Module
+
+The Posts feature is organized as a self-contained module with clear boundaries:
+
+```dart
+features/posts/
+├── domain/         # Business entities
+├── data/           # Data access and storage
+└── presentation/   # UI and state management
+```
+
+This structure enables:
+- **Isolation**: Each feature can be developed independently
+- **Testability**: Layers can be tested in isolation
+- **Scalability**: New features can be added without affecting existing code
+- **Maintainability**: Clear boundaries make code easier to navigate
+
+<Accordion title="Example: Adding a New Feature">
+  To add a new feature (e.g., `comments`), create:
+  ```
+  lib/features/comments/
+  ├── domain/models/comment.dart
+  ├── data/repositories/comment_repository.dart
+  └── presentation/
+      ├── providers/comment_provider.dart
+      └── screens/comments_screen.dart
+  ```
+  
+  This pattern ensures consistency and predictability across the codebase.
+</Accordion>
+
+## Core Services Layer
+
+Shared services that are used across multiple features are centralized in `lib/core/services/`:
+
+```dart title="lib/core/services/camera_service.dart"
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+
+class CameraService {
+  final ImagePicker _picker = ImagePicker();
+
+  /// Opens camera and returns captured photo as File
+  Future<File?> takePhoto() async {
+    try {
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
+      return photo != null ? File(photo.path) : null;
+    } catch (e) {
+      print("Error opening camera: $e");
+      return null;
+    }
+  }
+}
+```
+
+### Why Core Services?
+
+- **Reusability**: Services like `CameraService` can be used by multiple features
+- **Single Responsibility**: Each service has one clear purpose
+- **Easy Testing**: Services can be mocked for testing
+- **Dependency Injection**: Services are injected where needed, not hardcoded
+
+## Technology Stack
+
+### Core Technologies
+
+| Technology | Purpose | Version |
+|------------|---------|--------|
+| **Flutter** | UI Framework | SDK >=3.0.0 |
+| **Supabase** | Backend (Database, Storage, Auth) | 2.5.0 |
+| **Provider** | State Management | 6.1.2 |
+| **Image Picker** | Camera Integration | 1.1.1 |
+
+### Supporting Libraries
+
+<CodeGroup>
+```yaml pubspec.yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^2.5.0    # Backend services
+  provider: ^6.1.2             # State management
+  image_picker: ^1.1.1         # Camera access
+  intl: ^0.19.0                # Date formatting
+  flutter_dotenv: ^5.1.0       # Environment config
+  csv: ^6.0.0                  # Data export
+  share_plus: ^7.2.1           # File sharing
+  path_provider: ^2.1.1        # Local storage
+```
+</CodeGroup>
+
+## Technology Rationale
+
+<AccordionGroup>
+  <Accordion title="Why Flutter?">
+    - Cross-platform development (Android, iOS, Web)
+    - Fast development with hot reload
+    - Rich UI component library (Material Design)
+    - Strong community and ecosystem
+  </Accordion>
+
+  <Accordion title="Why Supabase?">
+    - Open-source Firebase alternative
+    - Built-in PostgreSQL database
+    - Real-time subscriptions out of the box
+    - Integrated file storage
+    - Row-level security for data protection
+    - No vendor lock-in
+  </Accordion>
+
+  <Accordion title="Why Provider?">
+    - Official Flutter state management solution
+    - Simple and intuitive API
+    - Excellent performance
+    - Built-in support for ChangeNotifier pattern
+    - Easy integration with Flutter's widget tree
+  </Accordion>
+</AccordionGroup>
+
+## Application Entry Point
+
+The `main.dart` file initializes the application and sets up dependency injection:
+
+```dart title="lib/main.dart"
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  await dotenv.load(fileName: "assets/.env");
+
+  // Initialize Supabase client
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL'] ?? '',
+    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
+  );
+
+  // Run app with Provider for state management
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => PostProvider(PostRepository()),
+      child: const PhotoBoardApp(),
+    ),
+  );
+}
+```
+
+### Initialization Flow
+
+1. **Bindings**: Ensure Flutter framework is initialized
+2. **Environment**: Load configuration from `.env` file
+3. **Backend**: Initialize Supabase connection
+4. **State Management**: Set up Provider with PostProvider
+5. **UI**: Launch PhotoBoardApp widget
+
+<Note>
+  The `ChangeNotifierProvider` at the root enables all widgets to access `PostProvider` using `context.read<PostProvider>()` or `context.watch<PostProvider>()`.
+</Note>
+
+## Design Principles
+
+### Separation of Concerns
+
+Each layer has distinct responsibilities:
+- **Domain**: Business logic and entities
+- **Data**: Data access and external APIs
+- **Presentation**: UI and user interactions
+
+### Dependency Rule
+
+Dependencies point inward:
+```
+Presentation → Data → Domain
+```
+
+- Presentation depends on Data and Domain
+- Data depends on Domain
+- Domain has no dependencies (pure Dart)
+
+### Single Responsibility Principle
+
+Each class has one reason to change:
+- `Post` model only represents post data
+- `PostRepository` only handles data operations
+- `PostProvider` only manages UI state
+- `CameraService` only handles camera operations
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Clean Architecture" icon="layer-group" href="./clean-architecture">
+    Deep dive into the three-layer architecture pattern
+  </Card>
+  <Card title="State Management" icon="bolt" href="./state-management">
+    Learn how Provider manages application state
+  </Card>
+</CardGroup>

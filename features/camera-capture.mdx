@@ -1,0 +1,375 @@
+---
+title: Camera Capture
+description: Capture photos with ethical consent and guided reflection for PhotoVoice research
+---
+
+## Overview
+
+PhotoBoard implements a responsible camera capture flow that prioritizes ethical consent and participant safety. The camera service integrates with Flutter's `image_picker` package and includes image quality optimization for efficient storage.
+
+## Camera Service Architecture
+
+The `CameraService` class provides a simple interface for photo capture with built-in error handling:
+
+```dart lib/core/services/camera_service.dart
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+
+class CameraService {
+  final ImagePicker _picker = ImagePicker();
+
+  Future<File?> takePhoto() async {
+    try {
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80, // Light compression for storage optimization
+      );
+
+      if (photo != null) {
+        return File(photo.path);
+      }
+    } catch (e) {
+      print("Error opening camera: $e");
+    }
+    return null;
+  }
+}
+```
+
+### Image Quality Settings
+
+The camera service uses **imageQuality: 80** to balance:
+- **File size**: Reduced storage costs in Supabase
+- **Visual quality**: Maintains clarity for research analysis
+- **Upload speed**: Faster transmission on mobile networks
+
+<Note>
+  The 80% quality setting provides optimal compression for qualitative research without losing critical visual details.
+</Note>
+
+## Ethical Consent Flow
+
+Before accessing the camera, PhotoBoard displays a mandatory ethical consent dialog that participants must accept. This implements PhotoVoice methodology best practices.
+
+### Consent Dialog Implementation
+
+The consent flow is triggered when users tap the camera button:
+
+<Steps>
+  <Step title="Display Consent Dialog">
+    Show a non-dismissible dialog explaining ethical responsibilities
+    
+    ```dart lib/features/posts/presentation/screens/home_screen.dart
+    Future<void> _openCamera(BuildContext context) async {
+      // 1. Show Ethical Consent screen/dialog
+      final bool? accepted = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1E1E1E),
+            title: const Text('Consentimiento Ético'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: Icon(Icons.privacy_tip, color: Colors.blueAccent),
+                    title: Text(
+                      'Respeto la privacidad y no fotografiaré rostros sin consentimiento explícito.',
+                    ),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.health_and_safety, color: Colors.orangeAccent),
+                    title: Text(
+                      'Priorizo mi seguridad física y la de otros al tomar fotos en el entorno.',
+                    ),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.public, color: Colors.greenAccent),
+                    title: Text(
+                      'Entiendo que mis fotos y narrativas se usarán para visibilizar realidades sociales.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('No acepto'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Acepto y Comprendo'),
+              ),
+            ],
+          );
+        },
+      );
+
+      // If user didn't accept, abort the flow
+      if (accepted != true) return;
+
+      // Continue with camera if accepted...
+    }
+    ```
+  </Step>
+  
+  <Step title="Validate Consent">
+    Check if the user accepted the terms. If not, abort the camera flow entirely.
+    
+    ```dart
+    if (accepted != true) return;
+    ```
+  </Step>
+  
+  <Step title="Open Camera">
+    If consent is granted, open the native camera interface:
+    
+    ```dart
+    final cameraService = CameraService();
+    final File? photoFile = await cameraService.takePhoto();
+    ```
+  </Step>
+  
+  <Step title="Navigate to Confirmation">
+    If a photo is captured, navigate to the ConfirmationScreen for reflection:
+    
+    ```dart
+    if (photoFile != null && context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ConfirmationScreen(imageFile: photoFile),
+        ),
+      );
+    }
+    ```
+  </Step>
+</Steps>
+
+### Consent Principles
+
+The dialog emphasizes three key principles:
+
+| Principle | Icon | Description |
+|-----------|------|-------------|
+| **Privacy** | 🔒 | No faces without explicit consent |
+| **Safety** | 🛡️ | Physical safety prioritized |
+| **Purpose** | 🌍 | Research for social dialogue |
+
+## Confirmation Screen Workflow
+
+After capturing a photo, users enter the `ConfirmationScreen` to add narrative reflection before publishing.
+
+### SHOWED Methodology Guidance
+
+The confirmation screen provides a **SHOWED framework** guide to help participants reflect deeply:
+
+```dart lib/features/posts/presentation/screens/confirmation_screen.dart
+void _showShowedGuide(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    builder: (context) {
+      return Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Guía de Reflexión (SHOWED)',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const Text(
+              'S - ¿Qué vemos aquí? (See)\n'
+              'H - ¿Qué está pasando realmente? (Happening)\n'
+              'O - ¿Cómo se relaciona con nuestras vidas? (Our lives)\n'
+              'W - ¿Por qué existe esta situación? (Why)\n'
+              'E / D - ¿Qué podemos hacer al respecto? (Empower / Do)',
+              style: TextStyle(fontSize: 16, height: 1.5),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+```
+
+### Confirmation UI Components
+
+The confirmation screen includes:
+
+<Tabs>
+  <Tab title="Image Preview">
+    A full-width preview of the captured photo with rounded corners:
+    
+    ```dart
+    Hero(
+      tag: 'captured_image',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.file(
+          widget.imageFile,
+          height: 350,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        ),
+      ),
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Reflection Field">
+    A multi-line text field for deep narrative reflection:
+    
+    ```dart
+    TextField(
+      controller: _commentController,
+      maxLines: 10, // Increased for deep narratives
+      decoration: InputDecoration(
+        labelText: 'Narrativa / Reflexión Crítica',
+        alignLabelWithHint: true,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    )
+    ```
+  </Tab>
+  
+  <Tab title="Publish Button">
+    A prominent button to upload the photo and reflection:
+    
+    ```dart
+    ElevatedButton.icon(
+      onPressed: isUploading ? null : _onPublish,
+      icon: const Icon(Icons.cloud_upload_rounded),
+      label: const Text(
+        'Compartir Voz',
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+    )
+    ```
+  </Tab>
+</Tabs>
+
+### Publishing Process
+
+When users tap "Compartir Voz" (Share Voice):
+
+<Steps>
+  <Step title="Validate Input">
+    Ensure the narrative field is not empty:
+    
+    ```dart
+    final comment = _commentController.text.trim();
+    if (comment.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, añade una narrativa sobre tu foto.')),
+      );
+      return;
+    }
+    ```
+  </Step>
+  
+  <Step title="Upload to Supabase">
+    Call the `PostProvider` to upload the image and narrative:
+    
+    ```dart
+    final provider = Provider.of<PostProvider>(context, listen: false);
+    await provider.publishPost(widget.imageFile, comment);
+    ```
+  </Step>
+  
+  <Step title="Show Feedback">
+    Display success or error messages:
+    
+    ```dart
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('¡Voz compartida con éxito!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    ```
+  </Step>
+  
+  <Step title="Return to Feed">
+    Navigate back to the home screen to see the new post in the feed:
+    
+    ```dart
+    Navigator.pop(context);
+    ```
+  </Step>
+</Steps>
+
+## Loading States
+
+During upload, the confirmation screen shows a full-screen loading overlay:
+
+```dart
+if (isUploading)
+  Container(
+    color: Colors.black45,
+    child: const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator.adaptive(
+            backgroundColor: Colors.white,
+          ),
+          SizedBox(height: 24),
+          Text(
+            'Guardando tu reflexión...',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    ),
+  )
+```
+
+<Note>
+  The loading state prevents duplicate submissions and provides clear feedback to users during upload.
+</Note>
+
+## Error Handling
+
+The camera flow includes comprehensive error handling:
+
+- **Camera access denied**: Returns `null` and doesn't crash
+- **Upload failure**: Shows error SnackBar with details
+- **Network issues**: Caught and displayed to user
+- **Empty narrative**: Validates before attempting upload
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Always Show Consent" icon="shield-check">
+    Never bypass the ethical consent dialog, even for returning users
+  </Card>
+  
+  <Card title="Provide Guidance" icon="lightbulb">
+    Make the SHOWED framework easily accessible during reflection
+  </Card>
+  
+  <Card title="Validate Input" icon="check-circle">
+    Ensure narratives are provided before allowing submission
+  </Card>
+  
+  <Card title="Handle Errors" icon="triangle-exclamation">
+    Gracefully handle camera permission denials and network failures
+  </Card>
+</CardGroup>
+
+## Related Features
+
+- [Posts Feed](/features/posts-feed) - View published posts in real-time
+- [Data Export](/features/data-export) - Export research data for analysis
+- [Post Repository API](/api/post-repository) - Learn how images are stored

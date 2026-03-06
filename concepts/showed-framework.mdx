@@ -1,0 +1,323 @@
+---
+title: "SHOWED Reflection Framework"
+description: "How PhotoBoard uses the SHOWED framework to guide meaningful critical reflection on participant photographs"
+---
+
+## What is SHOWED?
+
+SHOWED is a structured questioning framework designed specifically for PhotoVoice participatory research. It guides participants from descriptive observation to critical analysis to action planning. The acronym represents five stages of reflection:
+
+<Steps>
+  <Step title="S - What do we See here?">
+    Describe the concrete, observable elements in the photograph
+  </Step>
+  <Step title="H - What is really Happening?">
+    Interpret the deeper meaning or context beyond surface appearance
+  </Step>
+  <Step title="O - How does this relate to Our lives?">
+    Connect the image to personal and community experiences
+  </Step>
+  <Step title="W - Why does this situation exist?">
+    Analyze root causes and systemic factors
+  </Step>
+  <Step title="E/D - What can we Empower ourselves to Do?">
+    Identify pathways for action and change
+  </Step>
+</Steps>
+
+<Info>
+  The framework was developed by Shaffer (1983) and adapted for PhotoVoice by Wang and colleagues. It's grounded in Paulo Freire's critical pedagogy - moving from passive observation to active transformation.
+</Info>
+
+## SHOWED in PhotoBoard
+
+PhotoBoard integrates the SHOWED framework directly into the post-creation workflow through an accessible help system:
+
+### Implementation Details
+
+When participants reach the confirmation screen after capturing a photo, they can access SHOWED guidance via a help button:
+
+```dart
+// confirmation_screen.dart:118-123
+appBar: AppBar(
+  title: const Text('Reflexiona y Comparte'),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.help_outline),
+      tooltip: 'Ayuda para reflexionar',
+      onPressed: () => _showShowedGuide(context),
+    )
+  ],
+),
+```
+
+### The SHOWED Guide Modal
+
+Clicking the help icon reveals a bottom sheet with the full SHOWED framework:
+
+```dart
+// confirmation_screen.dart:60-108
+void _showShowedGuide(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: const Color(0xFF1E1E1E),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Guía de Reflexión (SHOWED)',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'S - ¿Qué vemos aquí? (See)\n'
+              'H - ¿Qué está pasando realmente? (Happening)\n'
+              'O - ¿Cómo se relaciona con nuestras vidas? (Our lives)\n'
+              'W - ¿Por qué existe esta situación? (Why)\n'
+              'E / D - ¿Qué podemos hacer al respecto? (Empower / Do)',
+              style: TextStyle(fontSize: 16, height: 1.5, color: Colors.white70),
+            ),
+```
+
+<Tip>
+  The guide is **always accessible** during narrative writing - participants can reference it multiple times as they develop their reflection. This supports iterative deepening of analysis.
+</Tip>
+
+### Multiple Access Points
+
+PhotoBoard provides two ways to access SHOWED guidance:
+
+1. **AppBar icon** (top right) - confirmation_screen.dart:118-123
+2. **Inline text button** (above text field) - confirmation_screen.dart:149-153
+
+```dart
+// Inline access point
+TextButton.icon(
+  onPressed: () => _showShowedGuide(context),
+  icon: const Icon(Icons.psychology),
+  label: const Text('Ver preguntas de apoyo (SHOWED)'),
+),
+```
+
+<Note>
+  The psychology brain icon signals that this is about reflective thinking, not just technical help.
+</Note>
+
+## Using SHOWED for Deep Reflection
+
+Here's how participants can apply each stage when writing their narratives:
+
+<AccordionGroup>
+  <Accordion title="S - What do we See here?" icon="eye">
+    **Purpose**: Establish shared understanding of the image content.
+    
+    **Sample prompts**:
+    - What objects, people, or places are visible?
+    - What colors, textures, or spatial arrangements stand out?
+    - What is in focus vs. background?
+    
+    **Example narrative**:
+    *"In this photo, we see an empty lot filled with trash - plastic bags, broken furniture, discarded tires. In the background is a school playground where children are playing."*
+    
+    <Tip>Start concrete. This descriptive foundation grounds the subsequent analysis.</Tip>
+  </Accordion>
+  
+  <Accordion title="H - What is really Happening?" icon="magnifying-glass">
+    **Purpose**: Move beyond surface appearance to interpret meaning.
+    
+    **Sample prompts**:
+    - What story does this image tell?
+    - What is the context or history behind what we see?
+    - What's not visible but implied?
+    
+    **Example narrative**:
+    *"This lot used to be a community garden, but it was abandoned after the city cut funding. Now it's a dumping ground. The proximity to the school means kids are exposed to health hazards daily."*
+    
+    <Info>This stage bridges description and analysis - setting up the "why" question.</Info>
+  </Accordion>
+  
+  <Accordion title="O - How does this relate to Our lives?" icon="people-group">
+    **Purpose**: Connect the specific image to broader lived experience.
+    
+    **Sample prompts**:
+    - Have I experienced this? Have my neighbors?
+    - How common or widespread is this issue?
+    - Who is affected? How?
+    
+    **Example narrative**:
+    *"Every parent in this neighborhood worries about their kids playing near this lot. We've organized clean-up days, but within weeks it fills up again. It makes us feel like our community doesn't matter to the city."*
+    
+    <Warning>This is where individual photos become collective knowledge - revealing patterns across participants.</Warning>
+  </Accordion>
+  
+  <Accordion title="W - Why does this situation exist?" icon="circle-question">
+    **Purpose**: Identify root causes and systemic factors (critical consciousness).
+    
+    **Sample prompts**:
+    - What policies, power structures, or resource distribution created this?
+    - Who benefits from the current situation? Who is harmed?
+    - What historical factors led here?
+    
+    **Example narrative**:
+    *"The garden closure was part of budget cuts that targeted low-income neighborhoods. Waste management services are less frequent here than in wealthier areas. This reflects systemic disinvestment - our zip code has less political power."*
+    
+    <Note>This stage often reveals structural inequality, discrimination, or policy failures - making the personal political.</Note>
+  </Accordion>
+  
+  <Accordion title="E/D - What can we Empower ourselves to Do?" icon="hands-holding-circle">
+    **Purpose**: Move from critique to action - PhotoVoice as catalyst for change.
+    
+    **Sample prompts**:
+    - What immediate actions could we take?
+    - What policy changes could address root causes?
+    - Who has power to make decisions? How can we reach them?
+    
+    **Example narrative**:
+    *"We need to petition the city council for restored funding and equitable waste services. This photo and others can be shown at the next council meeting. We're also connecting with the environmental justice coalition to build broader pressure."*
+    
+    <Tip>The best SHOWED reflections end with concrete next steps - individual, collective, and systemic.</Tip>
+  </Accordion>
+</AccordionGroup>
+
+## Facilitating SHOWED Discussions
+
+For research facilitators using PhotoBoard in group settings:
+
+### Individual Reflection First
+
+Encourage participants to draft their narrative privately using SHOWED before group discussion:
+
+<Steps>
+  <Step title="Capture the image">
+    Participant takes photo during fieldwork period
+  </Step>
+  <Step title="Initial reflection">
+    Using the in-app SHOWED guide, participant writes a draft narrative addressing each stage
+  </Step>
+  <Step title="Group dialogue">
+    In facilitated sessions, participants present images and read narratives to the group
+  </Step>
+  <Step title="Collective analysis">
+    Group discussion deepens SHOWED stages, especially O, W, and E/D which benefit from multiple perspectives
+  </Step>
+  <Step title="Revision (optional)">
+    Participants may choose to refine their narratives based on group insights
+  </Step>
+</Steps>
+
+### Group Discussion Techniques
+
+<CardGroup cols={2}>
+  <Card title="Gallery Walk" icon="image">
+    Display all participant images physically or on screen. Small groups rotate, applying SHOWED questions to each image together.
+  </Card>
+  <Card title="Theme Clusters" icon="layer-group">
+    Group images by emerging themes (e.g., housing, education, safety). Apply SHOWED collectively to each cluster.
+  </Card>
+  <Card title="Cross-Case Analysis" icon="diagram-project">
+    Select 3-5 images that show different facets of the same issue. Use SHOWED to build a comprehensive analysis.
+  </Card>
+  <Card title="Action Planning Circles" icon="compass">
+    Focus extended time on the E/D stage - generating a shared action agenda based on collective SHOWED insights.
+  </Card>
+</CardGroup>
+
+## Variations and Adaptations
+
+<Accordion title="For different contexts, you can adapt SHOWED">
+  **Youth Projects** (simplify language):
+  - S: What's in the picture?
+  - H: What's going on?
+  - O: Does this happen to us?
+  - W: Why is it like this?
+  - E/D: What can we do?
+  
+  **Health Research** (add specific prompts):
+  - S: What health-related elements do we see?
+  - H: What health issue or asset is represented?
+  - O: How does this affect our community's health?
+  - W: What causes health inequities here?
+  - E/D: What health interventions or policies could help?
+  
+  **Organizational Change** (reframe for institutional context):
+  - S: What workplace condition do we observe?
+  - H: What organizational pattern is visible?
+  - O: How does this impact our daily work?
+  - W: What policies or culture created this?
+  - E/D: What organizational changes should leadership make?
+</Accordion>
+
+## Why Structured Reflection Matters
+
+Without frameworks like SHOWED, participatory photography risks being:
+
+- **Purely descriptive** - documenting problems without analyzing causes
+- **Individualized** - treating systemic issues as personal experiences
+- **Disempowering** - creating awareness without pathways to action
+- **Extractive** - generating data for researchers without community benefit
+
+SHOWED transforms photos from "evidence" into **consciousness-raising tools**:
+
+<Note>
+  A participant might capture a photo of a closed clinic (description) but SHOWED prompts them to connect it to healthcare deserts (O), policy disinvestment (W), and advocacy strategies (E/D) - fundamentally different levels of analysis.
+</Note>
+
+## Digital Implementation Benefits
+
+PhotoBoard's embedded SHOWED guide offers advantages over traditional facilitation:
+
+✅ **Accessibility**: Participants can reflect at their own pace, revisiting prompts as needed
+
+✅ **Consistency**: Every participant receives the same structured framework
+
+✅ **Privacy**: Initial reflection happens individually before optional group sharing
+
+✅ **Documentation**: SHOWED-guided narratives are automatically paired with images in the database
+
+✅ **Scalability**: Enables larger-scale participatory research without requiring intensive facilitator training
+
+<Warning>
+  **Limitation**: Digital tools can't replace the richness of facilitated group dialogue. Best practice is to use PhotoBoard's SHOWED guide to **prepare** participants for deeper in-person discussions.
+</Warning>
+
+## Measuring Reflection Depth
+
+For researchers analyzing narratives, you can assess how fully participants engaged with SHOWED:
+
+| Reflection Level | Characteristics | Example |
+|-----------------|----------------|----------|
+| **Surface** | Only addresses S (description) | "This is a broken sidewalk" |
+| **Interpretive** | Addresses S and H (meaning) | "This broken sidewalk shows neglect in our neighborhood" |
+| **Connected** | Addresses S, H, O (collective experience) | "This broken sidewalk is like many in our area - makes it dangerous for elderly residents and people with disabilities" |
+| **Critical** | Addresses S, H, O, W (systemic analysis) | "This broken sidewalk reflects how the city prioritizes infrastructure investment in wealthy neighborhoods while neglecting working-class areas" |
+| **Action-Oriented** | Addresses all stages including E/D | "...We can document all broken sidewalks, present this evidence at the public works meeting, and demand equal maintenance standards" |
+
+<Tip>
+  In research outputs, narrative depth can be a data point - showing participant engagement, capacity for critical analysis, and readiness for collective action.
+</Tip>
+
+## Related Concepts
+
+<CardGroup cols={2}>
+  <Card title="PhotoVoice Methodology" icon="camera" href="/concepts/photovoice-methodology">
+    Understand the broader participatory research framework that SHOWED supports
+  </Card>
+  <Card title="Ethical Guidelines" icon="shield-check" href="/concepts/ethical-guidelines">
+    Learn about ethical consent and safety protocols that precede SHOWED reflection
+  </Card>
+</CardGroup>
+
+<Info>
+  **Academic Citation**: Shaffer, R. (1983). Beyond the dispensary. Nairobi: African Medical and Research Foundation. (Original SHOWED framework)
+</Info>

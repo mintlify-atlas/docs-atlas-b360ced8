@@ -1,0 +1,417 @@
+---
+title: Data Export
+description: Export PhotoVoice data to CSV format for qualitative research analysis
+---
+
+## Overview
+
+PhotoBoard includes a powerful data export feature that allows researchers to download all PhotoVoice contributions as a CSV file. This enables qualitative analysis using tools like NVivo, MAXQDA, Atlas.ti, or Excel.
+
+## CSV Export Functionality
+
+The export feature is accessible from the app bar in the home screen:
+
+```dart lib/features/posts/presentation/screens/home_screen.dart
+AppBar(
+  title: const Text('PhotoVoice'),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.download_rounded, color: Colors.white),
+      tooltip: 'Exportar datos para investigación',
+      onPressed: () => _exportData(context),
+    ),
+  ],
+)
+```
+
+## Export Implementation
+
+The `_exportData` method handles the complete export process:
+
+```dart lib/features/posts/presentation/screens/home_screen.dart
+Future<void> _exportData(BuildContext context) async {
+  try {
+    // 1. Show brief loading state
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Generando archivo CSV...')),
+    );
+
+    // 2. Fetch actual data from provider
+    final provider = Provider.of<PostProvider>(context, listen: false);
+    final List<Post> posts = await provider.fetchAllPosts();
+
+    // 3. Create CSV headers
+    List<List<dynamic>> csvData = [
+      ['Fecha', 'URL_Imagen', 'Narrativa_Reflexion', 'ID_Participante'],
+    ];
+
+    // 4. Transform posts into data rows
+    for (var post in posts) {
+      csvData.add([
+        post.createdAt.toIso8601String(),
+        post.imageUrl,
+        post.comment,
+        post.id,
+      ]);
+    }
+
+    // 5. Convert to CSV string
+    String csv = const ListToCsvConverter().convert(csvData);
+
+    // 6. Write to temporary local file
+    final directory = await getTemporaryDirectory();
+    final path = '${directory.path}/photovoice_export_${DateTime.now().millisecondsSinceEpoch}.csv';
+    final File file = File(path);
+    await file.writeAsString(csv);
+
+    // 7. Use share_plus to share or save it
+    await Share.shareXFiles(
+      [XFile(path)],
+      text: 'Exportación de datos de codificación cualitativa - PhotoVoice',
+      subject: 'PhotoVoice_CSV_Export',
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error al exportar los datos: $e'),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
+}
+```
+
+## Export Process Flow
+
+<Steps>
+  <Step title="User Initiates Export">
+    Researcher taps the download icon in the app bar
+  </Step>
+  
+  <Step title="Show Loading State">
+    Display a SnackBar indicating CSV generation has started:
+    
+    ```dart
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Generando archivo CSV...')),
+    );
+    ```
+  </Step>
+  
+  <Step title="Fetch All Posts">
+    Retrieve all posts from Supabase (not just cached/visible ones):
+    
+    ```dart
+    final provider = Provider.of<PostProvider>(context, listen: false);
+    final List<Post> posts = await provider.fetchAllPosts();
+    ```
+  </Step>
+  
+  <Step title="Build CSV Structure">
+    Create headers and data rows:
+    
+    ```dart
+    List<List<dynamic>> csvData = [
+      ['Fecha', 'URL_Imagen', 'Narrativa_Reflexion', 'ID_Participante'],
+    ];
+    
+    for (var post in posts) {
+      csvData.add([
+        post.createdAt.toIso8601String(),
+        post.imageUrl,
+        post.comment,
+        post.id,
+      ]);
+    }
+    ```
+  </Step>
+  
+  <Step title="Convert to CSV Format">
+    Use the `csv` package to convert to proper CSV string:
+    
+    ```dart
+    String csv = const ListToCsvConverter().convert(csvData);
+    ```
+  </Step>
+  
+  <Step title="Write to Temporary File">
+    Save the CSV with a timestamped filename:
+    
+    ```dart
+    final directory = await getTemporaryDirectory();
+    final path = '${directory.path}/photovoice_export_${DateTime.now().millisecondsSinceEpoch}.csv';
+    final File file = File(path);
+    await file.writeAsString(csv);
+    ```
+  </Step>
+  
+  <Step title="Share with System Dialog">
+    Use `share_plus` to let users choose where to save/send:
+    
+    ```dart
+    await Share.shareXFiles(
+      [XFile(path)],
+      text: 'Exportación de datos de codificación cualitativa - PhotoVoice',
+      subject: 'PhotoVoice_CSV_Export',
+    );
+    ```
+  </Step>
+</Steps>
+
+## Data Structure and Fields
+
+The exported CSV contains four columns:
+
+### CSV Columns
+
+| Column | Description | Example |
+|--------|-------------|----------|
+| **Fecha** | ISO 8601 timestamp (UTC) | `2024-03-15T18:30:45.123Z` |
+| **URL_Imagen** | Public Supabase Storage URL | `https://project.supabase.co/storage/v1/object/public/photos/...` |
+| **Narrativa_Reflexion** | Full participant narrative | `"Esta foto muestra la falta de espacios verdes..."` |
+| **ID_Participante** | Unique post identifier (UUID) | `a1b2c3d4-e5f6-7890-abcd-ef1234567890` |
+
+### Sample CSV Output
+
+```csv
+Fecha,URL_Imagen,Narrativa_Reflexion,ID_Participante
+2024-03-15T18:30:45.123Z,https://example.supabase.co/storage/v1/object/public/photos/image1.jpg,"Esta foto representa la falta de infraestructura en nuestra comunidad. Vemos calles sin pavimentar que se inundan cada vez que llueve.",a1b2c3d4-e5f6-7890-abcd-ef1234567890
+2024-03-14T12:15:30.456Z,https://example.supabase.co/storage/v1/object/public/photos/image2.jpg,"Los niños juegan entre el tráfico porque no hay parques seguros. Esta realidad debe cambiar.",b2c3d4e5-f6a7-8901-bcde-f12345678901
+```
+
+<Note>
+  The CSV uses proper escaping for narratives containing commas, quotes, or line breaks, ensuring compatibility with all analysis tools.
+</Note>
+
+## Use Cases for Qualitative Research
+
+The exported CSV enables various research workflows:
+
+<Tabs>
+  <Tab title="NVivo Analysis">
+    **Import Process:**
+    1. Open NVivo and create a new project
+    2. Import CSV as a dataset
+    3. Map `Narrativa_Reflexion` to text content
+    4. Map `Fecha` to timestamp attribute
+    5. Use `URL_Imagen` to link visual data
+    
+    **Coding Workflow:**
+    - Auto-code by themes
+    - Create parent/child nodes for SHOWED framework
+    - Visualize themes with word clouds
+    - Generate frequency queries
+  </Tab>
+  
+  <Tab title="MAXQDA Analysis">
+    **Import Process:**
+    1. Select "Import Data" → "Import from CSV"
+    2. Choose delimiter and encoding (UTF-8)
+    3. Map columns to document structure
+    
+    **Analysis Features:**
+    - Code narratives with qualitative codes
+    - Create code matrices by date
+    - Export coded segments
+    - Visual tools for theme mapping
+  </Tab>
+  
+  <Tab title="Atlas.ti Analysis">
+    **Import Process:**
+    1. Create Hermeneutic Unit
+    2. Import CSV as primary documents
+    3. Link images via URL references
+    
+    **Network Analysis:**
+    - Build concept networks
+    - Link narratives to visual themes
+    - Create semantic networks
+    - Generate theory models
+  </Tab>
+  
+  <Tab title="Excel/R Analysis">
+    **Import Process:**
+    1. Open CSV in Excel or read with `read.csv()` in R
+    2. Parse ISO 8601 dates
+    3. Clean and preprocess text
+    
+    **Quantitative Coding:**
+    - Sentiment analysis
+    - Word frequency counts
+    - Timeline visualizations
+    - Statistical coding patterns
+  </Tab>
+</Tabs>
+
+## Share Functionality
+
+PhotoBoard uses the `share_plus` package for system-native sharing:
+
+```dart
+await Share.shareXFiles(
+  [XFile(path)],
+  text: 'Exportación de datos de codificación cualitativa - PhotoVoice',
+  subject: 'PhotoVoice_CSV_Export',
+);
+```
+
+### Platform Behaviors
+
+<CardGroup cols={2}>
+  <Card title="iOS" icon="apple">
+    Opens iOS share sheet with options:
+    - Save to Files
+    - Share via Mail
+    - AirDrop to Mac
+    - Save to iCloud Drive
+  </Card>
+  
+  <Card title="Android" icon="android">
+    Opens Android share menu with options:
+    - Save to Google Drive
+    - Share via Gmail
+    - Save to Downloads
+    - Send via WhatsApp
+  </Card>
+</CardGroup>
+
+## Error Handling
+
+The export function handles multiple error scenarios:
+
+<Tabs>
+  <Tab title="Network Errors">
+    If Supabase is unreachable:
+    
+    ```dart
+    catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al exportar los datos: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+    ```
+    
+    **User sees:** Red SnackBar with error details
+  </Tab>
+  
+  <Tab title="Storage Errors">
+    If temporary directory is inaccessible:
+    
+    ```dart
+    final directory = await getTemporaryDirectory();
+    ```
+    
+    **Fallback:** Uses platform-specific temp directory automatically
+  </Tab>
+  
+  <Tab title="Share Cancelled">
+    If user cancels the share dialog:
+    
+    **Behavior:** Silently returns without error (expected UX)
+  </Tab>
+  
+  <Tab title="Empty Dataset">
+    If no posts exist:
+    
+    **Output:** CSV with headers only:
+    ```csv
+    Fecha,URL_Imagen,Narrativa_Reflexion,ID_Participante
+    ```
+  </Tab>
+</Tabs>
+
+## File Naming Convention
+
+Exported files follow this pattern:
+
+```
+photovoice_export_<timestamp>.csv
+```
+
+**Example:**
+```
+photovoice_export_1710522645123.csv
+```
+
+- **Prefix:** `photovoice_export_` for easy identification
+- **Timestamp:** Milliseconds since epoch (unique per export)
+- **Extension:** `.csv` for universal compatibility
+
+<Note>
+  The timestamp prevents filename conflicts when exporting multiple times in the same session.
+</Note>
+
+## Dependencies
+
+The export feature uses three key packages:
+
+```yaml pubspec.yaml
+dependencies:
+  csv: ^6.0.0                    # CSV conversion
+  path_provider: ^2.1.1          # Temporary directory access
+  share_plus: ^7.2.1             # System share dialog
+```
+
+### Package Roles
+
+| Package | Purpose |
+|---------|----------|
+| **csv** | Converts `List<List>` to proper CSV format with escaping |
+| **path_provider** | Gets platform-specific temporary directory |
+| **share_plus** | Invokes native share sheet/dialog |
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Export All Data" icon="database">
+    Use `fetchAllPosts()` to get complete dataset, not just visible posts from the stream
+  </Card>
+  
+  <Card title="Handle Async Properly" icon="clock">
+    Check `context.mounted` before showing SnackBars after async operations
+  </Card>
+  
+  <Card title="UTF-8 Encoding" icon="language">
+    Ensure proper encoding for multi-language narratives (Spanish, etc.)
+  </Card>
+  
+  <Card title="ISO 8601 Dates" icon="calendar">
+    Use standard date format for cross-platform compatibility
+  </Card>
+</CardGroup>
+
+## Research Ethics Considerations
+
+<Warning>
+  **Participant Privacy**: The exported data includes:
+  - Full narrative text (may contain identifying information)
+  - Image URLs (publicly accessible)
+  - Timestamps (can reveal patterns)
+  
+  Researchers must:
+  - Store exports securely
+  - Anonymize before publication
+  - Follow IRB protocols
+  - Obtain proper consent for data use
+</Warning>
+
+## Future Enhancements
+
+Potential improvements to the export feature:
+
+- **Filtered exports**: Export by date range or participant
+- **Multiple formats**: JSON, XML, or SPSS formats
+- **Image downloads**: Bundle images with CSV
+- **Scheduled exports**: Automatic daily/weekly exports
+- **Cloud sync**: Direct upload to Google Drive/Dropbox
+
+## Related Features
+
+- [Posts Feed](/features/posts-feed) - View the data being exported
+- [Camera Capture](/features/camera-capture) - How data is collected
+- [Post Repository API](/api/post-repository) - Where data is stored

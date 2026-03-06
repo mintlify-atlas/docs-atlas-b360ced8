@@ -1,0 +1,329 @@
+---
+title: "HomeScreen"
+description: "Main screen widget displaying the post feed and camera access"
+---
+
+## Overview
+
+The `HomeScreen` widget is the main interface of the PhotoVoice app, displaying a real-time feed of posts and providing access to camera functionality with ethical consent prompts.
+
+**Location:** `lib/features/posts/presentation/screens/home_screen.dart`
+
+## Class Definition
+
+```dart
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+}
+```
+
+<ParamField path="key" type="Key" optional>
+  Widget key for Flutter's element tree
+</ParamField>
+
+## Key Features
+
+### 1. Real-time Post Feed
+
+Displays posts using a `StreamBuilder` connected to `PostProvider.postsStream` for automatic updates.
+
+From `home_screen.dart:180-257`:
+
+```dart
+final postStream = context.read<PostProvider>().postsStream;
+
+return StreamBuilder<List<Post>>(
+  stream: postStream,
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (snapshot.hasError) {
+      return Center(
+        child: Text('Sin conexión.\nPor favor, revisa tu red.'),
+      );
+    }
+
+    final posts = snapshot.data;
+    
+    if (posts == null || posts.isEmpty) {
+      return Center(
+        child: Text('No hay voces registradas aún.\nSé el primero en compartir tu realidad.'),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _onRefresh,
+      child: ListView.builder(
+        itemCount: posts.length,
+        itemBuilder: (context, index) {
+          final post = posts[index];
+          return PostCard(post: post);
+        },
+      ),
+    );
+  },
+)
+```
+
+### 2. Ethical Consent Dialog
+
+Before opening the camera, users must accept ethical guidelines for responsible photography.
+
+From `home_screen.dart:17-74`:
+
+```dart
+Future<void> _openCamera(BuildContext context) async {
+  // 1. Show ethical consent dialog
+  final bool? accepted = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: const Text('Consentimiento Ético'),
+        content: const SingleChildScrollView(
+          child: Column(
+            children: [
+              ListTile(
+                leading: Icon(Icons.privacy_tip),
+                title: Text('Respeto la privacidad y no fotografiaré rostros sin consentimiento explícito.'),
+              ),
+              ListTile(
+                leading: Icon(Icons.health_and_safety),
+                title: Text('Priorizo mi seguridad física y la de otros al tomar fotos en el entorno.'),
+              ),
+              ListTile(
+                leading: Icon(Icons.public),
+                title: Text('Entiendo que mis fotos y narrativas se usarán para visibilizar realidades sociales y generar diálogo.'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('No acepto'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Acepto y Comprendo'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (accepted != true) return;
+  
+  // 2. Open camera if accepted
+  // ...
+}
+```
+
+### 3. Camera Integration
+
+Integrates `CameraService` to capture photos and navigate to confirmation screen.
+
+From `home_screen.dart:80-93`:
+
+```dart
+final cameraService = CameraService();
+final File? photoFile = await cameraService.takePhoto();
+
+if (photoFile != null && context.mounted) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ConfirmationScreen(imageFile: photoFile),
+    ),
+  );
+}
+```
+
+### 4. Data Export (CSV)
+
+Exports all posts to CSV format for qualitative research analysis.
+
+From `home_screen.dart:95-146`:
+
+```dart
+Future<void> _exportData(BuildContext context) async {
+  try {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Generando archivo CSV...')),
+    );
+
+    final provider = Provider.of<PostProvider>(context, listen: false);
+    final List<Post> posts = await provider.fetchAllPosts();
+
+    // Create CSV headers
+    List<List<dynamic>> csvData = [
+      ['Fecha', 'URL_Imagen', 'Narrativa_Reflexion', 'ID_Participante'],
+    ];
+
+    // Transform posts to CSV rows
+    for (var post in posts) {
+      csvData.add([
+        post.createdAt.toIso8601String(),
+        post.imageUrl,
+        post.comment,
+        post.id,
+      ]);
+    }
+
+    // Convert to CSV string
+    String csv = const ListToCsvConverter().convert(csvData);
+
+    // Write to temporary file
+    final directory = await getTemporaryDirectory();
+    final path = '${directory.path}/photovoice_export_${DateTime.now().millisecondsSinceEpoch}.csv';
+    final File file = File(path);
+    await file.writeAsString(csv);
+
+    // Share file
+    await Share.shareXFiles(
+      [XFile(path)],
+      text: 'Exportación de datos de codificación cualitativa - PhotoVoice',
+      subject: 'PhotoVoice_CSV_Export',
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error al exportar los datos: $e'),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
+}
+```
+
+## UI Components
+
+### AppBar
+
+From `home_screen.dart:158-179`:
+
+```dart
+AppBar(
+  title: const Text(
+    'PhotoVoice', 
+    style: TextStyle(
+      fontWeight: FontWeight.w600, 
+      letterSpacing: -0.5,
+      color: Colors.white,
+    )
+  ),
+  backgroundColor: const Color(0xFF121212),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.download_rounded, color: Colors.white),
+      tooltip: 'Exportar datos para investigación',
+      onPressed: () => _exportData(context),
+    ),
+  ],
+)
+```
+
+### Floating Action Button
+
+From `home_screen.dart:260-268`:
+
+```dart
+FloatingActionButton(
+  onPressed: () => _openCamera(context),
+  mini: true, 
+  backgroundColor: const Color(0xFF8B5CF6),
+  foregroundColor: Colors.white,
+  elevation: 4,
+  child: const Icon(Icons.lens, size: 24),
+)
+```
+
+## Methods
+
+### _openCamera()
+
+Opens the ethical consent dialog and camera.
+
+```dart
+Future<void> _openCamera(BuildContext context) async
+```
+
+<ParamField path="context" type="BuildContext" required>
+  Build context for navigation and dialogs
+</ParamField>
+
+**Flow:**
+1. Shows ethical consent dialog
+2. If accepted, opens camera via `CameraService`
+3. If photo captured, navigates to `ConfirmationScreen`
+
+### _exportData()
+
+Exports all posts to CSV format for research analysis.
+
+```dart
+Future<void> _exportData(BuildContext context) async
+```
+
+<ParamField path="context" type="BuildContext" required>
+  Build context for provider access and snackbars
+</ParamField>
+
+**Output format:**
+- CSV file with headers: Fecha, URL_Imagen, Narrativa_Reflexion, ID_Participante
+- Filename pattern: `photovoice_export_{timestamp}.csv`
+- Shared via system share sheet
+
+### _onRefresh()
+
+Handles pull-to-refresh gesture.
+
+```dart
+Future<void> _onRefresh() async
+```
+
+From `home_screen.dart:148-150`:
+
+```dart
+Future<void> _onRefresh() async {
+  await Future.delayed(const Duration(seconds: 1));
+}
+```
+
+<Note>
+The stream automatically updates, so this method just provides visual feedback to the user.
+</Note>
+
+## State Management
+
+The screen is stateless and relies on:
+- `PostProvider` for post data and state
+- `StreamBuilder` for reactive UI updates
+- Provider package for dependency injection
+
+## Design System
+
+**Color Palette:**
+- Background: `#121212` (dark)
+- Surface: `#1E1E1E`
+- Primary: `#8B5CF6` (purple)
+- Text: White/White70
+
+**Typography:**
+- Title: FontWeight.w600, letterSpacing -0.5
+- Body: Default with height 1.4-1.5
+
+## Dependencies
+
+- `dart:io` - File operations
+- `flutter/material.dart` - UI framework
+- `provider` - State management
+- `csv` - CSV generation
+- `path_provider` - Temporary directory access
+- `share_plus` - System share functionality
+- `CameraService` - Camera operations
+- `PostProvider` - Post state management
+- `ConfirmationScreen` - Navigation target

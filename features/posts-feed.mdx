@@ -1,0 +1,441 @@
+---
+title: Posts Feed
+description: Real-time feed of PhotoVoice posts with Supabase streaming and pull-to-refresh
+---
+
+## Overview
+
+The posts feed is the heart of PhotoBoard, displaying all participant contributions in real-time. Built with Supabase's streaming capabilities, the feed updates automatically when new posts are added by any participant.
+
+## Real-Time Feed with Supabase Streams
+
+The feed uses Supabase's `stream()` method to listen for database changes in real-time:
+
+```dart lib/features/posts/data/repositories/post_repository.dart
+Stream<List<Post>> fetchPostsStream() {
+  return _supabase
+      .from('posts')
+      .stream(primaryKey: ['id'])
+      .order('created_at', ascending: false)
+      .map((maps) => maps.map((map) => Post.fromJson(map)).toList());
+}
+```
+
+### How Streaming Works
+
+<Steps>
+  <Step title="Subscribe to Table">
+    The app subscribes to the `posts` table with `stream(primaryKey: ['id'])`
+  </Step>
+  
+  <Step title="Order Results">
+    Posts are ordered by `created_at` in descending order (newest first)
+  </Step>
+  
+  <Step title="Map to Models">
+    Raw JSON data is mapped to `Post` objects using `Post.fromJson()`
+  </Step>
+  
+  <Step title="Auto-Update UI">
+    StreamBuilder automatically rebuilds the UI when new data arrives
+  </Step>
+</Steps>
+
+<Note>
+  Real-time updates happen automatically without requiring manual refresh. Users see new posts within seconds of publication.
+</Note>
+
+## Home Screen Implementation
+
+The `HomeScreen` widget uses a `StreamBuilder` to display the feed:
+
+```dart lib/features/posts/presentation/screens/home_screen.dart
+@override
+Widget build(BuildContext context) {
+  final postStream = context.read<PostProvider>().postsStream;
+
+  return Scaffold(
+    backgroundColor: const Color(0xFF121212),
+    appBar: AppBar(
+      title: const Text('PhotoVoice'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.download_rounded),
+          tooltip: 'Exportar datos para investigación',
+          onPressed: () => _exportData(context),
+        ),
+      ],
+    ),
+    body: StreamBuilder<List<Post>>(
+      stream: postStream,
+      builder: (context, snapshot) {
+        // Handle loading, error, and data states...
+      },
+    ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () => _openCamera(context),
+      backgroundColor: const Color(0xFF8B5CF6),
+      child: const Icon(Icons.lens, size: 24),
+    ),
+  );
+}
+```
+
+## Connection States
+
+The feed handles three primary connection states:
+
+<Tabs>
+  <Tab title="Loading">
+    Displayed while establishing connection to Supabase:
+    
+    ```dart
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+        )
+      );
+    }
+    ```
+    
+    **When shown:**
+    - Initial app launch
+    - Reconnecting after network loss
+    - First database query
+  </Tab>
+  
+  <Tab title="Error">
+    Displayed when connection fails:
+    
+    ```dart
+    if (snapshot.hasError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              'Sin conexión.\nPor favor, revisa tu red.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    ```
+    
+    **Common causes:**
+    - No internet connection
+    - Supabase service down
+    - Invalid credentials
+  </Tab>
+  
+  <Tab title="Empty">
+    Displayed when no posts exist:
+    
+    ```dart
+    if (posts == null || posts.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.psychology_alt,
+              size: 64,
+              color: Colors.grey[800],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No hay voces registradas aún.\nSé el primero en compartir tu realidad.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    ```
+    
+    **When shown:**
+    - New PhotoVoice project
+    - All posts deleted
+    - First-time participants
+  </Tab>
+</Tabs>
+
+## Post Display with PostCard
+
+Each post is rendered using the `PostCard` widget, which follows Instagram-style design:
+
+```dart lib/features/posts/presentation/widgets/post_card.dart
+class PostCard extends StatelessWidget {
+  final Post post;
+
+  const PostCard({super.key, required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    final formattedDate = DateFormat('dd MMM yyyy').format(post.createdAt);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      elevation: 0,
+      color: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20.0),
+        side: BorderSide(color: Colors.grey[850]!, width: 1.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header with anonymous participant
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              child: Icon(Icons.person_outline),
+            ),
+            title: const Text('Participante Anónimo'),
+            trailing: Text(formattedDate),
+          ),
+          
+          // Square image (1:1 aspect ratio)
+          AspectRatio(
+            aspectRatio: 1 / 1,
+            child: Image.network(
+              post.imageUrl,
+              fit: BoxFit.cover,
+            ),
+          ),
+          
+          // Narrative/reflection
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              post.comment,
+              style: const TextStyle(
+                fontSize: 15,
+                height: 1.6,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+### PostCard Anatomy
+
+<CardGroup cols={3}>
+  <Card title="Header" icon="user">
+    Shows "Participante Anónimo" with date to protect identity while maintaining temporal context
+  </Card>
+  
+  <Card title="Image" icon="image">
+    1:1 aspect ratio square image with loading indicators and error handling
+  </Card>
+  
+  <Card title="Narrative" icon="align-left">
+    Full reflection text with increased line height (1.6) for readability
+  </Card>
+</CardGroup>
+
+## Image Loading States
+
+The PostCard handles image loading gracefully:
+
+<Tabs>
+  <Tab title="Loading">
+    Shows a spinner while the image downloads:
+    
+    ```dart
+    loadingBuilder: (context, child, loadingProgress) {
+      if (loadingProgress == null) return child;
+      return Center(
+        child: CircularProgressIndicator(
+          color: Theme.of(context).colorScheme.primary,
+          strokeWidth: 2,
+        ),
+      );
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Error">
+    Displays a broken image icon if loading fails:
+    
+    ```dart
+    errorBuilder: (context, error, stackTrace) {
+      return Container(
+        color: const Color(0xFF1E1E1E),
+        child: const Center(
+          child: Icon(
+            Icons.broken_image_rounded,
+            size: 48,
+            color: Colors.grey,
+          ),
+        ),
+      );
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Success">
+    Displays the full image with BoxFit.cover to fill the square container without distortion
+  </Tab>
+</Tabs>
+
+## Pull-to-Refresh Functionality
+
+Users can manually refresh the feed by pulling down:
+
+```dart lib/features/posts/presentation/screens/home_screen.dart
+Future<void> _onRefresh() async {
+  await Future.delayed(const Duration(seconds: 1));
+}
+
+// In build method:
+return RefreshIndicator(
+  onRefresh: _onRefresh,
+  color: Theme.of(context).colorScheme.primary,
+  backgroundColor: const Color(0xFF1E1E1E),
+  child: ListView.builder(
+    physics: const AlwaysScrollableScrollPhysics(),
+    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+    itemCount: posts.length,
+    itemBuilder: (context, index) {
+      final post = posts[index];
+      return PostCard(post: post);
+    },
+  ),
+);
+```
+
+<Note>
+  While the stream already updates in real-time, pull-to-refresh provides a familiar gesture for users who expect manual control.
+</Note>
+
+## Post Data Model
+
+Each post contains four essential fields:
+
+```dart lib/features/posts/domain/models/post.dart
+class Post {
+  final String id;           // UUID from Supabase
+  final String imageUrl;     // Public URL from Supabase Storage
+  final String comment;      // Narrative reflection
+  final DateTime createdAt;  // Timestamp for ordering
+
+  Post({
+    required this.id,
+    required this.imageUrl,
+    required this.comment,
+    required this.createdAt,
+  });
+
+  factory Post.fromJson(Map<String, dynamic> json) {
+    return Post(
+      id: json['id'].toString(),
+      imageUrl: json['image_url'] as String,
+      comment: json['comment'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+}
+```
+
+### Field Descriptions
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | String | Unique identifier (UUID) generated by Supabase |
+| `imageUrl` | String | Public URL pointing to Supabase Storage bucket |
+| `comment` | String | Participant's narrative reflection (SHOWED methodology) |
+| `createdAt` | DateTime | UTC timestamp when post was created |
+
+## ListView Optimization
+
+The feed uses `ListView.builder` for efficient scrolling:
+
+```dart
+ListView.builder(
+  physics: const AlwaysScrollableScrollPhysics(),
+  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+  itemCount: posts.length,
+  itemBuilder: (context, index) {
+    final post = posts[index];
+    return PostCard(post: post);
+  },
+)
+```
+
+**Benefits:**
+- Only builds visible PostCards
+- Recycles widgets as user scrolls
+- Handles thousands of posts efficiently
+- Maintains smooth 60fps scrolling
+
+## Floating Action Button
+
+The camera button floats over the feed for easy access:
+
+```dart
+floatingActionButton: FloatingActionButton(
+  onPressed: () => _openCamera(context),
+  mini: true,
+  backgroundColor: const Color(0xFF8B5CF6),
+  foregroundColor: Colors.white,
+  elevation: 4,
+  child: const Icon(Icons.lens, size: 24),
+),
+floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+```
+
+<Note>
+  The lens icon (📷) represents the photographic nature of PhotoVoice methodology better than a generic camera icon.
+</Note>
+
+## Error Handling
+
+The feed implements comprehensive error handling:
+
+- **Network errors**: Shows offline state with retry option
+- **Image load failures**: Displays broken image icon
+- **Empty states**: Encourages first contribution
+- **Stream errors**: Caught and displayed to user
+
+## Performance Considerations
+
+<CardGroup cols={2}>
+  <Card title="Efficient Streaming" icon="bolt">
+    Only subscribes once per screen, not per widget rebuild
+  </Card>
+  
+  <Card title="Lazy Loading" icon="list">
+    ListView.builder only renders visible items
+  </Card>
+  
+  <Card title="Image Caching" icon="database">
+    Network images are cached by Flutter automatically
+  </Card>
+  
+  <Card title="Optimized Images" icon="compress">
+    Images compressed to 80% quality before upload
+  </Card>
+</CardGroup>
+
+## Related Features
+
+- [Camera Capture](/features/camera-capture) - Take photos with ethical consent
+- [Data Export](/features/data-export) - Export feed data for research analysis
+- [Post Repository API](/api/post-repository) - Learn how streaming works

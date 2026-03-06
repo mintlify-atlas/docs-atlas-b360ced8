@@ -1,0 +1,683 @@
+---
+title: 'Installation'
+description: 'Complete installation guide for PhotoBoard across all platforms'
+---
+
+This comprehensive guide walks you through setting up PhotoBoard from scratch, including Flutter SDK installation, Supabase configuration, and platform-specific requirements.
+
+## System Requirements
+
+<CardGroup cols={3}>
+  <Card title="Operating System" icon="desktop">
+    - macOS 10.14+
+    - Windows 10+
+    - Linux (64-bit)
+  </Card>
+  <Card title="Development Tools" icon="code">
+    - Git 2.x+
+    - Flutter SDK 3.0.0+
+    - Android Studio / VS Code
+  </Card>
+  <Card title="Target Platform" icon="mobile">
+    - Android 5.0+ (API 21+)
+    - iOS support coming soon
+  </Card>
+</CardGroup>
+
+## Flutter SDK Installation
+
+<Tabs>
+  <Tab title="macOS">
+    <Steps>
+      <Step title="Download Flutter">
+        Download the latest stable Flutter SDK:
+
+        ```bash
+        cd ~/development
+        wget https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_3.16.0-stable.zip
+        unzip flutter_macos_3.16.0-stable.zip
+        ```
+      </Step>
+
+      <Step title="Add to PATH">
+        Add Flutter to your PATH in `~/.zshrc` or `~/.bash_profile`:
+
+        ```bash
+        export PATH="$PATH:$HOME/development/flutter/bin"
+        ```
+
+        Reload your shell:
+
+        ```bash
+        source ~/.zshrc
+        ```
+      </Step>
+
+      <Step title="Verify Installation">
+        ```bash
+        flutter doctor
+        ```
+
+        This will check for any missing dependencies.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="Windows">
+    <Steps>
+      <Step title="Download Flutter">
+        1. Download the Flutter SDK from [flutter.dev](https://flutter.dev/docs/get-started/install/windows)
+        2. Extract the zip file to `C:\src\flutter`
+      </Step>
+
+      <Step title="Update PATH">
+        Add Flutter to your PATH:
+
+        1. Search for "Environment Variables" in Windows
+        2. Edit the `Path` variable
+        3. Add `C:\src\flutter\bin`
+        4. Click OK
+      </Step>
+
+      <Step title="Verify Installation">
+        Open a new Command Prompt and run:
+
+        ```bash
+        flutter doctor
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="Linux">
+    <Steps>
+      <Step title="Download Flutter">
+        ```bash
+        cd ~/development
+        wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.16.0-stable.tar.xz
+        tar xf flutter_linux_3.16.0-stable.tar.xz
+        ```
+      </Step>
+
+      <Step title="Add to PATH">
+        Add Flutter to your PATH in `~/.bashrc`:
+
+        ```bash
+        export PATH="$PATH:$HOME/development/flutter/bin"
+        ```
+
+        Reload:
+
+        ```bash
+        source ~/.bashrc
+        ```
+      </Step>
+
+      <Step title="Install Dependencies">
+        ```bash
+        sudo apt-get update
+        sudo apt-get install clang cmake ninja-build pkg-config libgtk-3-dev
+        ```
+      </Step>
+
+      <Step title="Verify Installation">
+        ```bash
+        flutter doctor
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+<Note>
+PhotoBoard requires **Flutter SDK 3.0.0 or higher** as specified in `pubspec.yaml`. Verify your version with `flutter --version`.
+</Note>
+
+## Android Development Setup
+
+<Steps>
+
+<Step title="Install Android Studio">
+
+Download and install [Android Studio](https://developer.android.com/studio).
+
+During installation, ensure the following are checked:
+- Android SDK
+- Android SDK Platform
+- Android Virtual Device
+
+</Step>
+
+<Step title="Configure Android SDK">
+
+Launch Android Studio and install the required SDK components:
+
+1. Open **SDK Manager** (Tools → SDK Manager)
+2. Under **SDK Platforms**, install:
+   - Android API 21 (minimum for PhotoBoard)
+   - Android API 33+ (recommended)
+3. Under **SDK Tools**, install:
+   - Android SDK Build-Tools
+   - Android SDK Command-line Tools
+   - Android Emulator
+
+</Step>
+
+<Step title="Accept Android Licenses">
+
+```bash
+flutter doctor --android-licenses
+```
+
+Press `y` to accept all licenses.
+
+</Step>
+
+</Steps>
+
+## Clone PhotoBoard Repository
+
+<Steps>
+
+<Step title="Clone the Project">
+
+```bash
+git clone <repository-url>
+cd photoboard
+```
+
+</Step>
+
+<Step title="Verify Project Structure">
+
+Ensure the project structure matches:
+
+```
+photoboard/
+├── lib/
+│   ├── main.dart
+│   ├── core/
+│   │   └── services/
+│   │       └── camera_service.dart
+│   └── features/
+│       └── posts/
+│           ├── data/
+│           │   └── repositories/
+│           │       └── post_repository.dart
+│           ├── domain/
+│           │   └── models/
+│           │       └── post.dart
+│           └── presentation/
+│               ├── providers/
+│               │   └── post_provider.dart
+│               ├── screens/
+│               │   ├── home_screen.dart
+│               │   └── confirmation_screen.dart
+│               └── widgets/
+│                   └── post_card.dart
+├── assets/
+│   └── .env (you'll create this)
+├── pubspec.yaml
+└── README.md
+```
+
+</Step>
+
+<Step title="Install Project Dependencies">
+
+```bash
+flutter pub get
+```
+
+This installs all packages defined in `pubspec.yaml`:
+
+<CodeGroup>
+
+```yaml pubspec.yaml
+name: photoboard
+description: A new Flutter project for PhotoBoard.
+version: 1.0.0+2
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^2.5.0
+  image_picker: ^1.1.1
+  provider: ^6.1.2
+  intl: ^0.19.0
+  flutter_dotenv: ^5.1.0
+  csv: ^6.0.0
+  share_plus: ^7.2.1
+  path_provider: ^2.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/.env
+```
+
+</CodeGroup>
+
+</Step>
+
+</Steps>
+
+## Supabase Project Setup
+
+<Steps>
+
+<Step title="Create Supabase Account">
+
+1. Go to [supabase.com](https://supabase.com)
+2. Click **Start your project**
+3. Sign up with GitHub, Google, or email
+
+</Step>
+
+<Step title="Create a New Project">
+
+1. Click **New Project**
+2. Choose your organization
+3. Enter project details:
+   - **Name**: PhotoBoard
+   - **Database Password**: Generate a secure password (save it!)
+   - **Region**: Choose closest to your users
+4. Click **Create new project**
+
+<Note>
+Project creation takes 1-2 minutes. Wait for the "Ready" status.
+</Note>
+
+</Step>
+
+<Step title="Get API Credentials">
+
+1. Navigate to **Settings** → **API**
+2. Copy the following:
+   - **Project URL** (e.g., `https://abcdefghijk.supabase.co`)
+   - **anon public** key (not the service_role key!)
+
+</Step>
+
+<Step title="Set Up Database Schema">
+
+Go to **SQL Editor** in your Supabase dashboard and run:
+
+```sql
+-- Create posts table
+CREATE TABLE posts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  image_url TEXT NOT NULL,
+  comment TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create index for faster queries
+CREATE INDEX idx_posts_created_at ON posts(created_at DESC);
+
+-- Enable Row Level Security
+ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+
+-- Allow anyone to read posts
+CREATE POLICY "Posts are publicly readable"
+  ON posts FOR SELECT
+  USING (true);
+
+-- Allow anyone to insert posts
+CREATE POLICY "Anyone can insert posts"
+  ON posts FOR INSERT
+  WITH CHECK (true);
+```
+
+Click **Run** to execute the SQL.
+
+</Step>
+
+<Step title="Configure Storage Bucket">
+
+1. Navigate to **Storage** in the sidebar
+2. Click **Create a new bucket**
+3. Configure the bucket:
+   - **Name**: `photos`
+   - **Public bucket**: Toggle ON
+   - **File size limit**: 5MB (recommended)
+   - **Allowed MIME types**: `image/jpeg,image/png,image/webp`
+4. Click **Create bucket**
+
+Set storage policies in the **Policies** tab:
+
+```sql
+-- Allow public uploads to photos bucket
+CREATE POLICY "Anyone can upload to photos bucket"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'photos');
+
+-- Allow public read access
+CREATE POLICY "Photos are publicly accessible"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'photos');
+```
+
+</Step>
+
+</Steps>
+
+## Environment Configuration
+
+<Steps>
+
+<Step title="Create .env File">
+
+Create the `assets/.env` file:
+
+```bash
+mkdir -p assets
+touch assets/.env
+```
+
+</Step>
+
+<Step title="Add Supabase Credentials">
+
+Add your credentials to `assets/.env`:
+
+```bash assets/.env
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+<Warning>
+**Security**: Never commit `.env` files to version control. Ensure `assets/.env` is listed in your `.gitignore`.
+</Warning>
+
+</Step>
+
+<Step title="Verify Asset Configuration">
+
+Confirm `pubspec.yaml` includes the `.env` file in assets:
+
+```yaml pubspec.yaml
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/.env
+```
+
+</Step>
+
+</Steps>
+
+## Build and Run
+
+<Tabs>
+  <Tab title="Development">
+    <Steps>
+      <Step title="Connect Device">
+        Connect an Android device via USB or start an emulator:
+
+        ```bash
+        flutter devices
+        ```
+      </Step>
+
+      <Step title="Run in Debug Mode">
+        ```bash
+        flutter run
+        ```
+
+        The app will hot-reload when you make changes.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="Production">
+    <Steps>
+      <Step title="Build Release APK">
+        ```bash
+        flutter build apk --split-per-abi
+        ```
+
+        This creates optimized APKs for different architectures:
+        - `app-armeabi-v7a-release.apk` (32-bit ARM)
+        - `app-arm64-v8a-release.apk` (64-bit ARM)
+        - `app-x86_64-release.apk` (64-bit x86)
+      </Step>
+
+      <Step title="Locate APK Files">
+        APKs are generated in:
+
+        ```
+        build/app/outputs/flutter-apk/
+        ```
+      </Step>
+
+      <Step title="Install on Device">
+        ```bash
+        adb install build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## PhotoBoard Architecture
+
+PhotoBoard follows **Clean Architecture** principles with clear separation of concerns:
+
+```
+lib/
+├── main.dart                    # App initialization and Supabase setup
+├── core/
+│   └── services/
+│       └── camera_service.dart  # Camera integration
+└── features/
+    └── posts/
+        ├── data/
+        │   └── repositories/
+        │       └── post_repository.dart  # Supabase integration
+        ├── domain/
+        │   └── models/
+        │       └── post.dart             # Post entity
+        └── presentation/
+            ├── providers/
+            │   └── post_provider.dart    # State management
+            ├── screens/                   # UI screens
+            └── widgets/                   # Reusable components
+```
+
+### Key Components
+
+<AccordionGroup>
+  <Accordion title="PostRepository - Supabase Integration">
+    The `PostRepository` handles all Supabase operations:
+
+    ```dart post_repository.dart
+    class PostRepository {
+      final SupabaseClient _supabase;
+
+      PostRepository({SupabaseClient? supabaseClient})
+          : _supabase = supabaseClient ?? Supabase.instance.client;
+
+      /// Upload image to Supabase Storage
+      Future<String> uploadImage(File file, String fileName) async {
+        final storagePath = 'public/$fileName';
+        
+        await _supabase.storage.from('photos').upload(storagePath, file);
+        
+        final String publicUrl = _supabase.storage
+            .from('photos')
+            .getPublicUrl(storagePath);
+            
+        return publicUrl;
+      }
+
+      /// Insert new post
+      Future<void> createPost(String imageUrl, String comment) async {
+        await _supabase.from('posts').insert({
+          'image_url': imageUrl,
+          'comment': comment,
+        });
+      }
+
+      /// Fetch posts ordered by created_at
+      Future<List<Post>> fetchPosts() async {
+        final response = await _supabase
+            .from('posts')
+            .select()
+            .order('created_at', ascending: false);
+        
+        return (response as List)
+            .map((postMap) => Post.fromJson(postMap))
+            .toList();
+      }
+
+      /// Real-time stream of posts
+      Stream<List<Post>> fetchPostsStream() {
+        return _supabase
+            .from('posts')
+            .stream(primaryKey: ['id'])
+            .order('created_at', ascending: false)
+            .map((maps) => maps.map((map) => Post.fromJson(map)).toList());
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Post Model - Data Structure">
+    ```dart post.dart
+    class Post {
+      final String id;
+      final String imageUrl;
+      final String comment;
+      final DateTime createdAt;
+
+      Post({
+        required this.id,
+        required this.imageUrl,
+        required this.comment,
+        required this.createdAt,
+      });
+
+      factory Post.fromJson(Map<String, dynamic> json) {
+        return Post(
+          id: json['id'].toString(),
+          imageUrl: json['image_url'] as String,
+          comment: json['comment'] as String,
+          createdAt: DateTime.parse(json['created_at'] as String),
+        );
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="App Initialization - main.dart">
+    ```dart main.dart
+    void main() async {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      // Load environment variables
+      await dotenv.load(fileName: "assets/.env");
+
+      // Initialize Supabase
+      await Supabase.initialize(
+        url: dotenv.env['SUPABASE_URL'] ?? '',
+        anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
+      );
+
+      // Initialize app with Provider
+      runApp(
+        ChangeNotifierProvider(
+          create: (context) => PostProvider(PostRepository()),
+          child: const PhotoBoardApp(),
+        ),
+      );
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Flutter doctor shows issues">
+    Run `flutter doctor -v` for detailed diagnostics:
+
+    ```bash
+    flutter doctor -v
+    ```
+
+    Common fixes:
+    - **Android licenses**: `flutter doctor --android-licenses`
+    - **Missing cmdline-tools**: Install via Android Studio SDK Manager
+    - **Xcode issues (macOS)**: Update to latest Xcode
+  </Accordion>
+
+  <Accordion title="Dependency conflicts">
+    If you encounter dependency conflicts:
+
+    ```bash
+    flutter clean
+    flutter pub cache repair
+    flutter pub get
+    ```
+  </Accordion>
+
+  <Accordion title="Supabase authentication errors">
+    - Verify your **anon key** (not service_role key) in `.env`
+    - Check that `SUPABASE_URL` has no trailing slash
+    - Ensure Row Level Security policies are created
+    - Confirm the storage bucket is set to **Public**
+  </Accordion>
+
+  <Accordion title="Build fails on Android">
+    Check `android/app/build.gradle`:
+
+    ```gradle
+    android {
+        compileSdkVersion 33  // or higher
+        
+        defaultConfig {
+            minSdkVersion 21
+            targetSdkVersion 33
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title=".env file not loading">
+    Ensure:
+    1. File is at `assets/.env` (not root directory)
+    2. `pubspec.yaml` includes it under assets
+    3. Run `flutter pub get` after modifying pubspec.yaml
+    4. Rebuild the app completely:
+       ```bash
+       flutter clean
+       flutter run
+       ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture Deep Dive" icon="sitemap" href="/architecture/overview">
+    Explore PhotoBoard's clean architecture pattern
+  </Card>
+  <Card title="PhotoVoice Methodology" icon="camera" href="/concepts/photovoice-methodology">
+    Learn about PhotoVoice methodology and SHOWED
+  </Card>
+  <Card title="Data Export" icon="file-export" href="/features/data-export">
+    Export posts to CSV for qualitative analysis
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/camera-service">
+    Complete API documentation
+  </Card>
+</CardGroup>

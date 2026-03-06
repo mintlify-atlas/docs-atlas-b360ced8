@@ -1,97 +1,98 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Introduction
+description: PhotoBoard is a modern, minimalist Flutter mobile app for PhotoVoice methodology - capture moments, add reflective narratives, and share on a real-time community board for participatory action research.
 ---
 
-## Setting up
+# Welcome to PhotoBoard
 
-Get your documentation site up and running in minutes.
+PhotoBoard is a Flutter-based mobile application designed to facilitate **PhotoVoice methodology** — a participatory action research approach that empowers communities to document and reflect on their lived experiences through photography and narrative.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get up and running with PhotoBoard in minutes
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="PhotoVoice Methodology" icon="camera" href="/concepts/photovoice-methodology">
+    Learn about the research framework behind PhotoBoard
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Architecture" icon="diagram-project" href="/architecture/overview">
+    Explore the clean architecture design
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="API Reference" icon="code" href="/api/camera-service">
+    Browse the complete API documentation
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Key Features
 
-Everything you need to create world-class documentation.
+<CardGroup cols={2}>
+  <Card title="Ethical Photo Capture" icon="shield-check">
+    Built-in consent workflow ensures ethical data collection with privacy-first design
+  </Card>
+  <Card title="SHOWED Framework" icon="lightbulb">
+    Guided reflection prompts help participants create meaningful narratives
+  </Card>
+  <Card title="Real-Time Feed" icon="stream">
+    Community board updates instantly using Supabase real-time subscriptions
+  </Card>
+  <Card title="Research Export" icon="file-csv">
+    Export data to CSV for qualitative analysis and coding
+  </Card>
+  <Card title="Clean Architecture" icon="layer-group">
+    Modular, testable codebase following Flutter best practices
+  </Card>
+  <Card title="Cloud-Powered" icon="cloud">
+    Supabase backend for authentication, storage, and database
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## What is PhotoVoice?
 
-## Need inspiration?
+PhotoVoice is a **participatory action research methodology** that empowers community members to:
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+1. **Document** their experiences through photography
+2. **Reflect** critically on personal and community issues
+3. **Share** their perspectives to drive social change
+
+PhotoBoard implements this methodology by providing a mobile-first platform where participants can capture photos with context, reflect using the **SHOWED framework**, and contribute to a shared community dialogue.
+
+## Technology Stack
+
+- **Frontend**: Flutter (Dart) - cross-platform mobile development
+- **Backend**: Supabase - authentication, PostgreSQL database, and cloud storage
+- **State Management**: Provider pattern for reactive state
+- **Architecture**: Clean Architecture with feature-based modules
+
+## Who is PhotoBoard For?
+
+<Note>
+PhotoBoard is designed for researchers, community organizers, and participants engaged in participatory action research projects using PhotoVoice methodology.
+</Note>
+
+- **Researchers**: Collect and analyze qualitative visual data
+- **Community Members**: Share lived experiences and perspectives
+- **Educators**: Facilitate critical reflection and dialogue
+- **Organizations**: Document community needs and assets
+
+## Next Steps
+
+<Steps>
+  <Step title="Install Dependencies">
+    Set up Flutter and Supabase to run PhotoBoard locally
+    
+    [Installation Guide →](/installation)
+  </Step>
+  <Step title="Follow the Quickstart">
+    Get PhotoBoard running in under 10 minutes
+    
+    [Quickstart Guide →](/quickstart)
+  </Step>
+  <Step title="Understand the Concepts">
+    Learn about PhotoVoice methodology and ethical guidelines
+    
+    [Core Concepts →](/concepts/photovoice-methodology)
+  </Step>
+</Steps>
+
+## Open Source
+
+PhotoBoard is open source and available on [GitHub](https://github.com/jaimegayo/PhotoBoard). Contributions are welcome!

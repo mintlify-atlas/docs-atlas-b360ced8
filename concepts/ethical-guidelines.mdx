@@ -1,0 +1,537 @@
+---
+title: "Ethical Guidelines"
+description: "PhotoBoard's ethical consent workflow, privacy protections, and best practices for responsible participatory research"
+---
+
+## Ethics-First Design
+
+PhotoBoard is built on the principle that **participatory research must center participant safety, dignity, and autonomy**. Before any photograph can be captured, the app enforces a comprehensive ethical consent process that educates participants and obtains informed agreement.
+
+<Warning>
+  PhotoVoice research involves documenting sensitive social realities. Without robust ethical protocols, participants can face risks including:
+  - Privacy violations if identities are exposed
+  - Physical safety threats when documenting injustice
+  - Psychological harm from reliving trauma
+  - Legal consequences in contexts of criminalized activities
+</Warning>
+
+## Ethical Consent Workflow
+
+PhotoBoard implements mandatory informed consent before camera access. This is not just a legal checkbox - it's an educational moment about participatory research ethics.
+
+### Implementation
+
+The consent dialog appears every time a participant initiates photo capture:
+
+```dart
+// home_screen.dart:17-77
+Future<void> _openCamera(BuildContext context) async {
+  // 1. Show Ethical Consent screen/dialog
+  final bool? accepted = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false, // Cannot be dismissed without decision
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Consentimiento Ético',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+```
+
+<Note>
+  **Key Design Decision**: `barrierDismissible: false` means participants cannot accidentally bypass consent - they must explicitly choose "Acepto" (I accept) or "No acepto" (I don't accept).
+</Note>
+
+### The Three Core Ethical Principles
+
+PhotoBoard's consent dialog presents three fundamental commitments:
+
+<Tabs>
+  <Tab title="Privacy & Consent">
+    ```dart
+    // home_screen.dart:34-40
+    ListTile(
+      leading: Icon(Icons.privacy_tip, color: Colors.blueAccent),
+      title: Text(
+        'Respeto la privacidad y no fotografiaré rostros sin '
+        'consentimiento explícito.',
+        style: TextStyle(color: Colors.white70, fontSize: 15),
+      ),
+    ),
+    ```
+    
+    **Translation**: "I respect privacy and will not photograph faces without explicit consent."
+    
+    **Why it matters**: Many PhotoVoice projects involve documenting community members. This principle requires participants to:
+    - Ask permission before photographing identifiable individuals
+    - Explain how the image will be used
+    - Obtain verbal or written consent
+    - Respect refusals without pressure
+    
+    <Tip>
+      **Best Practice**: Provide participants with consent forms they can have community members sign if faces are included. Store these separately from the PhotoBoard database.
+    </Tip>
+  </Tab>
+  
+  <Tab title="Physical Safety">
+    ```dart
+    // home_screen.dart:41-47
+    ListTile(
+      leading: Icon(Icons.health_and_safety, color: Colors.orangeAccent),
+      title: Text(
+        'Priorizo mi seguridad física y la de otros al tomar '
+        'fotos en el entorno.',
+        style: TextStyle(color: Colors.white70, fontSize: 15),
+      ),
+    ),
+    ```
+    
+    **Translation**: "I prioritize my physical safety and that of others when taking photos in the environment."
+    
+    **Why it matters**: Documenting social issues can expose participants to risk:
+    - Entering unsafe physical spaces (abandoned buildings, high-traffic roads)
+    - Photographing illegal activities or confrontational subjects
+    - Drawing attention in contexts of surveillance or police presence
+    - Weather hazards, environmental toxins, or structural dangers
+    
+    <Warning>
+      **Risk Assessment**: Before launching a PhotoVoice project, conduct a safety analysis with community partners. Identify no-go zones, times of day to avoid, and protocols if participants feel threatened.
+    </Warning>
+  </Tab>
+  
+  <Tab title="Purpose & Use">
+    ```dart
+    // home_screen.dart:48-54
+    ListTile(
+      leading: Icon(Icons.public, color: Colors.greenAccent),
+      title: Text(
+        'Entiendo que mis fotos y narrativas se usarán para '
+        'visibilizar realidades sociales y generar diálogo.',
+        style: TextStyle(color: Colors.white70, fontSize: 15),
+      ),
+    ),
+    ```
+    
+    **Translation**: "I understand that my photos and narratives will be used to make social realities visible and generate dialogue."
+    
+    **Why it matters**: This establishes:
+    - **Informed consent**: Participants know their contributions are research data
+    - **Purpose limitation**: Images are for social advocacy, not commercial use
+    - **Public nature**: Content may be shared in community forums, presentations, or policy meetings
+    - **Agency**: Participants are co-creators of knowledge, not research subjects
+    
+    <Info>
+      This principle is grounded in participatory action research ethics - research *with* communities, not *on* communities.
+    </Info>
+  </Tab>
+</Tabs>
+
+### Consent Decision Flow
+
+After reading the three principles, participants make a binary choice:
+
+```dart
+// home_screen.dart:58-74
+actions: [
+  TextButton(
+    onPressed: () => Navigator.pop(dialogContext, false),
+    child: const Text('No acepto', style: TextStyle(color: Colors.grey)),
+  ),
+  ElevatedButton(
+    onPressed: () => Navigator.pop(dialogContext, true),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF8B5CF6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ),
+    child: const Text('Acepto y Comprendo', 
+                      style: TextStyle(color: Colors.white)),
+  ),
+],
+```
+
+**"No acepto"** (I don't accept):
+- Returns `false` and aborts the photo capture workflow
+- No camera access granted
+- Participant returns to home screen
+
+**"Acepto y Comprendo"** (I accept and understand):
+- Returns `true` and proceeds to camera
+- Confirms participant has read and understood ethical commitments
+
+<Note>
+  The button text is "I accept **and understand**" - emphasizing comprehension, not just agreement. This aligns with informed consent standards in research ethics.
+</Note>
+
+```dart
+// home_screen.dart:76-77
+// If user didn't accept or closed dialog, abort the flow
+if (accepted != true) return;
+```
+
+## Privacy Protections
+
+Beyond the consent workflow, PhotoBoard implements several privacy-by-design features:
+
+### Anonymous Participation
+
+All posts are displayed as "Participante Anónimo" (Anonymous Participant):
+
+```dart
+// post_card.dart:28-46
+ListTile(
+  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+  leading: CircleAvatar(
+    radius: 16,
+    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+    child: Icon(
+      Icons.person_outline,
+      size: 20,
+      color: Theme.of(context).colorScheme.primary,
+    ),
+  ),
+  title: const Text(
+    'Participante Anónimo', // Protected identity, centering the voice
+    style: TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: 14,
+      color: Colors.white,
+    ),
+  ),
+```
+
+<Tip>
+  **Design Rationale**: PhotoVoice research centers **message over messenger**. Anonymity prevents bias, protects vulnerable participants, and shifts focus to the social issues being documented.
+</Tip>
+
+### Data Minimization
+
+The Post model stores only essential data:
+
+```dart
+// post.dart:1-12
+class Post {
+  final String id;
+  final String imageUrl;
+  final String comment;
+  final DateTime createdAt;
+  
+  Post({
+    required this.id,
+    required this.imageUrl,
+    required this.comment,
+    required this.createdAt,
+  });
+```
+
+**What's NOT collected**:
+- User names or profiles
+- Device identifiers
+- Location metadata
+- Contact information
+- IP addresses
+
+<Info>
+  This aligns with GDPR principles of data minimization and purpose limitation - only collect what's necessary for the research purpose.
+</Info>
+
+### Secure Storage
+
+Images and data are stored in Supabase with configurable access controls:
+
+```dart
+// post_repository.dart:12-24
+Future<String> uploadImage(File file, String fileName) async {
+  final storagePath = 'public/$fileName';
+  
+  // Upload file to "photos" bucket
+  await _supabase.storage.from('photos').upload(storagePath, file);
+  
+  // Get public URL to save in database
+  final String publicUrl = _supabase.storage
+      .from('photos')
+      .getPublicUrl(storagePath);
+      
+  return publicUrl;
+}
+```
+
+<Warning>
+  **Implementation Note**: The code shows `public/$fileName` - for sensitive research, configure the Supabase bucket as **private** and use signed URLs with expiration times instead of public URLs.
+</Warning>
+
+## Export Ethics
+
+PhotoBoard includes data export functionality for researchers, which raises additional ethical considerations:
+
+```dart
+// home_screen.dart:95-146
+Future<void> _exportData(BuildContext context) async {
+  // ...
+  List<List<dynamic>> csvData = [
+    ['Fecha', 'URL_Imagen', 'Narrativa_Reflexion', 'ID_Participante'],
+  ];
+  
+  for (var post in posts) {
+    csvData.add([
+      post.createdAt.toIso8601String(),
+      post.imageUrl,
+      post.comment,
+      post.id,
+    ]);
+  }
+  
+  await Share.shareXFiles(
+    [XFile(path)],
+    text: 'Exportación de datos de codificación cualitativa - PhotoVoice',
+  );
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Who can export data?" icon="user-shield">
+    **Current implementation**: Any user with access to the home screen can export all data (home_screen.dart:173-177).
+    
+    **Best practice recommendation**: Restrict export functionality to:
+    - Authenticated researcher accounts
+    - Project facilitators with approved IRB protocols
+    - Community advisory board members
+    
+    **Implementation approach**:
+    ```dart
+    // Add role-based access control
+    if (currentUser.role == 'researcher' || currentUser.role == 'facilitator') {
+      IconButton(
+        icon: const Icon(Icons.download_rounded),
+        onPressed: () => _exportData(context),
+      )
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="What data is exported?" icon="database">
+    The CSV includes:
+    - Timestamp (for temporal analysis)
+    - Image URL (for visual analysis)
+    - Full narrative text (for qualitative coding)
+    - Post ID (for database linkage)
+    
+    **Ethical consideration**: The exported data contains participant narratives that may include identifying information or sensitive disclosures.
+    
+    <Warning>
+      Researchers must:
+      - Store exported files securely (encrypted drives)
+      - Remove identifying information during analysis
+      - Delete files after research completion per IRB protocols
+      - Never share raw data publicly
+    </Warning>
+  </Accordion>
+  
+  <Accordion title="How should exported data be used?" icon="gavel">
+    The export is labeled "Exportación de datos de codificación cualitativa - PhotoVoice" (Export of qualitative coding data - PhotoVoice).
+    
+    **Appropriate uses**:
+    - Thematic analysis in qualitative software (NVivo, Atlas.ti, etc.)
+    - Developing codebooks for narrative analysis
+    - Creating anonymized excerpts for research papers
+    - Identifying patterns for community presentations
+    
+    **Inappropriate uses**:
+    - Publishing raw narratives with participant identification
+    - Sharing images without community approval
+    - Using data for purposes not disclosed in consent
+    - Commercial applications
+    
+    <Tip>
+      Best practice: Bring analysis back to the participant community for validation and interpretation before external dissemination.
+    </Tip>
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices for Facilitators
+
+If you're implementing PhotoBoard for a participatory research project:
+
+<Steps>
+  <Step title="Develop a research protocol">
+    Before deployment:
+    - Submit to Institutional Review Board (IRB) or ethics committee
+    - Create detailed consent forms (beyond the in-app consent)
+    - Develop risk mitigation strategies
+    - Plan data security and retention policies
+  </Step>
+  
+  <Step title="Conduct orientation sessions">
+    Train participants on:
+    - The three ethical principles in depth
+    - How to obtain consent from community members photographed
+    - Safety protocols specific to your research context
+    - What will happen to their photos and narratives
+    - Their rights (withdrawal, data deletion, anonymity)
+  </Step>
+  
+  <Step title="Establish community agreements">
+    Collaboratively develop:
+    - Guidelines for sensitive topics (when NOT to photograph)
+    - Decision-making processes for data use
+    - Protocols for handling risky situations
+    - Collective ownership of research outputs
+  </Step>
+  
+  <Step title="Implement technical safeguards">
+    Configure PhotoBoard securely:
+    - Use private Supabase storage buckets
+    - Implement authentication for export functionality
+    - Set up data encryption
+    - Create backup systems with access controls
+  </Step>
+  
+  <Step title="Monitor ongoing ethics">
+    Throughout the research:
+    - Check in regularly about participant wellbeing
+    - Adjust protocols if new risks emerge
+    - Ensure participants can withdraw without penalty
+    - Maintain transparent communication about data use
+  </Step>
+  
+  <Step title="Share ownership of outcomes">
+    At project conclusion:
+    - Co-present findings with participants
+    - Get community approval before external dissemination
+    - Ensure research benefits the community
+    - Delete data per agreed retention schedules
+  </Step>
+</Steps>
+
+## Context-Specific Considerations
+
+<CardGroup cols={2}>
+  <Card title="Minors/Youth" icon="child">
+    **Additional protections needed**:
+    - Parental/guardian consent
+    - Simplified consent language
+    - Heightened privacy measures
+    - School/institutional approvals
+    - Developmentally appropriate risk assessment
+  </Card>
+  
+  <Card title="Vulnerable Populations" icon="hands-holding-heart">
+    **Enhanced safeguards**:
+    - Community advisory boards
+    - Trauma-informed protocols
+    - Legal consultation on documentation risks
+    - Anonymous data handling
+    - Crisis support resources
+  </Card>
+  
+  <Card title="Criminalized Communities" icon="scale-balanced">
+    **Critical protections**:
+    - Legal counsel review
+    - Encryption and anonymization
+    - Protocols for law enforcement requests
+    - Clear boundaries on what to document
+    - Safety planning for exposure risks
+  </Card>
+  
+  <Card title="Global South Contexts" icon="earth-americas">
+    **Localized considerations**:
+    - Cultural norms around image-taking
+    - Power dynamics in research relationships
+    - Translation of consent materials
+    - Community gatekeepers and permissions
+    - Post-colonial research ethics
+  </Card>
+</CardGroup>
+
+## Ethical Tensions in Participatory Research
+
+PhotoVoice methodology involves inherent ethical complexities:
+
+<Accordion title="Balancing visibility and safety">
+  **The tension**: PhotoVoice aims to make invisible issues visible, but visibility can expose participants to risk.
+  
+  **Navigation strategies**:
+  - Use anonymization techniques (face blurring, voice distortion for presentations)
+  - Let participants choose which images are shared publicly vs. kept internal
+  - Create multiple versions of outputs (community version vs. policy version)
+  - Frame issues collectively rather than as individual stories
+  
+  <Info>
+    Example: A participant documents police harassment. The image is used in community discussions but not shared with media until the group strategically decides to do so with legal support.
+  </Info>
+</Accordion>
+
+<Accordion title="Individual consent vs. collective benefit">
+  **The tension**: Participatory research is meant to benefit the community, but individuals bear the burden of participation.
+  
+  **Navigation strategies**:
+  - Compensate participants for time and expertise
+  - Build in collective benefit mechanisms (community events, resource allocation)
+  - Ensure participants have agency over individual data even if collective project continues
+  - Create shared ownership structures for any products (reports, exhibits, grants)
+  
+  <Tip>
+    Some projects establish community funds where any revenue from PhotoVoice outputs returns to the community for self-determined purposes.
+  </Tip>
+</Accordion>
+
+<Accordion title="Researcher needs vs. participant control">
+  **The tension**: Academic researchers need data for publications/tenure; participants may want to control narratives.
+  
+  **Navigation strategies**:
+  - Negotiate data use agreements upfront
+  - Use co-authorship models
+  - Share draft publications with participants for feedback
+  - Prioritize community dissemination (local events, policy briefs) before academic outputs
+  - Consider community intellectual property rights
+  
+  <Warning>
+    Extractive research (take data, leave community) violates PhotoVoice ethics. If there's a conflict between researcher career needs and community control, community should prevail.
+  </Warning>
+</Accordion>
+
+## Continuous Consent
+
+PhotoBoard's **per-capture consent** (requiring agreement each time the camera is opened) is a form of continuous consent:
+
+```dart
+// This runs every time the camera button is pressed
+Future<void> _openCamera(BuildContext context) async {
+  final bool? accepted = await showDialog<bool>(...);
+  if (accepted != true) return;
+  // ...
+}
+```
+
+**Advantages**:
+- Participants re-affirm ethical commitments each session
+- Prevents habituation (going through motions without reflection)
+- Allows participants to opt out at any point
+- Creates moments for re-assessing safety
+
+**Consideration**:
+- May feel repetitive for experienced participants
+- Could be complemented with a "remember my choice for this session" option
+
+<Tip>
+  For long-term projects (months/years), consider periodic re-consent sessions where participants can update their preferences and facilitators can address emerging ethical questions.
+</Tip>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="PhotoVoice Methodology" icon="camera" href="/concepts/photovoice-methodology">
+    Understand how ethical guidelines fit within the broader participatory research framework
+  </Card>
+  <Card title="SHOWED Framework" icon="clipboard-question" href="/concepts/showed-framework">
+    Learn about the critical reflection method that follows ethical consent
+  </Card>
+</CardGroup>
+
+<Note>
+  **Further Reading**: 
+  - Institutional Review Board (IRB) guidelines for community-based participatory research
+  - The Belmont Report: Ethical Principles and Guidelines for the Protection of Human Subjects of Research
+  - Community-Based Participatory Research: A Guide to Ethical Principles and Practice (Minkler & Wallerstein)
+</Note>

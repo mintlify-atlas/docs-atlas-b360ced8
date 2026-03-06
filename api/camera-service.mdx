@@ -1,0 +1,89 @@
+---
+title: "CameraService"
+description: "Service class for capturing photos using device camera"
+---
+
+## Overview
+
+The `CameraService` class provides a simple interface to access the device camera and capture photos. It uses the `image_picker` package internally and handles camera permissions and image compression.
+
+**Location:** `lib/core/services/camera_service.dart`
+
+## Class Definition
+
+```dart
+class CameraService {
+  final ImagePicker _picker = ImagePicker();
+}
+```
+
+## Methods
+
+### takePhoto()
+
+Opens the device camera and returns the captured photo as a File object.
+
+```dart
+Future<File?> takePhoto() async
+```
+
+<ParamField path="returns" type="Future<File?>">
+  Returns a `File` object containing the captured image, or `null` if the user cancels the action or an error occurs.
+</ParamField>
+
+#### Behavior
+
+- Opens the device camera using `ImageSource.camera`
+- Applies 80% image quality compression to optimize upload to storage
+- Returns `null` if the user cancels or if an error occurs
+- Prints error messages to console (should be replaced with proper error logging like Crashlytics in production)
+
+#### Implementation Details
+
+From `camera_service.dart:9-24`:
+
+```dart
+Future<File?> takePhoto() async {
+  try {
+    final XFile? photo = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80, // Compresión ligera para optimizar la subida a Storage
+    );
+
+    if (photo != null) {
+      return File(photo.path);
+    }
+  } catch (e) {
+    // Idealmente, aquí registrarías el error en un sistema de Crashlytics.
+    print("Error al abrir la cámara: $e");
+  }
+  return null;
+}
+```
+
+## Usage Example
+
+From `home_screen.dart:82-92`:
+
+```dart
+final cameraService = CameraService();
+final File? photoFile = await cameraService.takePhoto();
+
+if (photoFile != null && context.mounted) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ConfirmationScreen(imageFile: photoFile),
+    ),
+  );
+}
+```
+
+## Error Handling
+
+The service catches exceptions during camera operations and returns `null` on failure. Users should always check for `null` before using the returned `File`.
+
+## Dependencies
+
+- `dart:io` - For File operations
+- `image_picker` package - For camera access

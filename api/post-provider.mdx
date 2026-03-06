@@ -1,0 +1,259 @@
+---
+title: "PostProvider"
+description: "State management provider for post operations and UI state"
+---
+
+## Overview
+
+The `PostProvider` class is a `ChangeNotifier` that manages post-related state and operations in the UI layer. It coordinates between the UI and the data repository, handling upload states and providing reactive data streams.
+
+**Location:** `lib/features/posts/presentation/providers/post_provider.dart`
+
+## Class Definition
+
+```dart
+class PostProvider extends ChangeNotifier {
+  final PostRepository _repository;
+
+  PostProvider(this._repository);
+}
+```
+
+<ParamField path="_repository" type="PostRepository" required>
+  The repository instance used for data operations
+</ParamField>
+
+## Properties
+
+### isUploading
+
+Indicates whether a post is currently being uploaded.
+
+```dart
+bool get isUploading => _isUploading;
+```
+
+<ResponseField name="isUploading" type="bool">
+  `true` when a post upload is in progress, `false` otherwise
+</ResponseField>
+
+#### Usage
+
+From `confirmation_screen.dart:112`:
+
+```dart
+final isUploading = context.watch<PostProvider>().isUploading;
+
+// Disable UI elements during upload
+TextField(
+  controller: _commentController,
+  enabled: !isUploading,
+  // ...
+)
+
+ElevatedButton(
+  onPressed: isUploading ? null : _onPublish,
+  // ...
+)
+```
+
+### postsStream
+
+Provides a real-time stream of posts from the repository.
+
+```dart
+Stream<List<Post>> get postsStream => _repository.fetchPostsStream();
+```
+
+<ResponseField name="postsStream" type="Stream<List<Post>>">
+  A stream that emits the latest list of posts whenever database changes occur
+</ResponseField>
+
+#### Usage
+
+From `home_screen.dart:154-181`:
+
+```dart
+final postStream = context.read<PostProvider>().postsStream;
+
+return Scaffold(
+  body: StreamBuilder<List<Post>>(
+    stream: postStream,
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      
+      if (snapshot.hasError) {
+        return Center(child: Text('Error: ${snapshot.error}'));
+      }
+      
+      final posts = snapshot.data;
+      // ... render posts
+    },
+  ),
+);
+```
+
+## Methods
+
+### publishPost()
+
+Uploads an image and creates a new post with the provided comment.
+
+```dart
+Future<void> publishPost(File imageFile, String comment) async
+```
+
+<ParamField path="imageFile" type="File" required>
+  The image file to upload
+</ParamField>
+
+<ParamField path="comment" type="String" required>
+  User's narrative reflection about the photo
+</ParamField>
+
+#### Behavior
+
+1. Sets `isUploading` to `true` and notifies listeners
+2. Generates a unique filename using timestamp
+3. Uploads the image to Supabase Storage
+4. Creates a post record in the database
+5. Sets `isUploading` to `false` and notifies listeners
+6. Rethrows any errors for UI handling
+
+#### Implementation
+
+From `post_provider.dart:21-43`:
+
+```dart
+Future<void> publishPost(File imageFile, String comment) async {
+  _isUploading = true;
+  notifyListeners();
+
+  try {
+    // Generar un nombre único para la imagen
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    
+    // 1. Subir a Storage
+    final imageUrl = await _repository.uploadImage(imageFile, fileName);
+    
+    // 2. Insertar en base de datos
+    await _repository.createPost(imageUrl, comment);
+    
+  } catch (e) {
+    // Manejo básico de error
+    print('Error al publicar post: $e');
+    rethrow;
+  } finally {
+    _isUploading = false;
+    notifyListeners();
+  }
+}
+```
+
+<Warning>
+This method rethrows exceptions. Always wrap calls in try-catch blocks to handle errors gracefully in the UI.
+</Warning>
+
+#### Complete Usage Example
+
+From `confirmation_screen.dart:24-58`:
+
+```dart
+Future<void> _onPublish() async {
+  final comment = _commentController.text.trim();
+  if (comment.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Por favor, añade una narrativa sobre tu foto.')),
+    );
+    return;
+  }
+
+  FocusScope.of(context).unfocus();
+
+  final provider = Provider.of<PostProvider>(context, listen: false);
+
+  try {
+    await provider.publishPost(widget.imageFile, comment);
+    
+    if (!mounted) return;
+    
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('¡Voz compartida con éxito!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error al compartir: $e'),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
+}
+```
+
+### fetchAllPosts()
+
+Fetches all posts as a one-time operation (non-streaming).
+
+```dart
+Future<List<Post>> fetchAllPosts() => _repository.fetchPosts();
+```
+
+<ResponseField name="returns" type="Future<List<Post>>">
+  A future that resolves to a list of all posts
+</ResponseField>
+
+#### Usage
+
+Used for operations that need a snapshot of data, such as CSV export:
+
+From `home_screen.dart:103-104`:
+
+```dart
+final provider = Provider.of<PostProvider>(context, listen: false);
+final List<Post> posts = await provider.fetchAllPosts();
+
+// Convert to CSV format...
+for (var post in posts) {
+  csvData.add([
+    post.createdAt.toIso8601String(),
+    post.imageUrl,
+    post.comment,
+    post.id,
+  ]);
+}
+```
+
+## State Management Pattern
+
+The provider follows the ChangeNotifier pattern:
+
+- Extends `ChangeNotifier` from Flutter
+- Calls `notifyListeners()` when state changes
+- UI widgets use `context.watch<PostProvider>()` to rebuild on state changes
+- One-time operations use `context.read<PostProvider>()` to avoid unnecessary rebuilds
+
+## Provider Setup
+
+Typically registered at app initialization:
+
+```dart
+ChangeNotifierProvider(
+  create: (context) => PostProvider(PostRepository()),
+  child: MyApp(),
+)
+```
+
+## Dependencies
+
+- `dart:io` - For File operations
+- `flutter/material.dart` - For ChangeNotifier
+- `PostRepository` - Data layer dependency
+- `Post` model - Domain model

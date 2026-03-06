@@ -1,0 +1,378 @@
+---
+title: "ConfirmationScreen"
+description: "Screen for reviewing captured photos and adding reflective narratives"
+---
+
+## Overview
+
+The `ConfirmationScreen` widget allows users to review their captured photo, add a reflective narrative using the SHOWED methodology, and publish their post to the community feed.
+
+**Location:** `lib/features/posts/presentation/screens/confirmation_screen.dart`
+
+## Class Definition
+
+```dart
+class ConfirmationScreen extends StatefulWidget {
+  final File imageFile;
+
+  const ConfirmationScreen({super.key, required this.imageFile});
+
+  @override
+  State<ConfirmationScreen> createState() => _ConfirmationScreenState;
+}
+```
+
+<ParamField path="imageFile" type="File" required>
+  The captured photo file to display and publish
+</ParamField>
+
+<ParamField path="key" type="Key" optional>
+  Widget key for Flutter's element tree
+</ParamField>
+
+## Key Features
+
+### 1. Photo Preview
+
+Displays the captured image with Hero animation for smooth transitions.
+
+From `confirmation_screen.dart:133-144`:
+
+```dart
+Hero(
+  tag: 'captured_image',
+  child: ClipRRect(
+    borderRadius: BorderRadius.circular(16),
+    child: Image.file(
+      widget.imageFile,
+      height: 350,
+      width: double.infinity,
+      fit: BoxFit.cover,
+    ),
+  ),
+)
+```
+
+### 2. SHOWED Methodology Guide
+
+Provides a bottom sheet with reflection prompts based on the SHOWED framework for photovoice methodology.
+
+From `confirmation_screen.dart:60-108`:
+
+```dart
+void _showShowedGuide(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    builder: (context) {
+      return Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Guía de Reflexión (SHOWED)',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'S - ¿Qué vemos aquí? (See)\n'
+              'H - ¿Qué está pasando realmente? (Happening)\n'
+              'O - ¿Cómo se relaciona con nuestras vidas? (Our lives)\n'
+              'W - ¿Por qué existe esta situación? (Why)\n'
+              'E / D - ¿Qué podemos hacer al respecto? (Empower / Do)',
+              style: TextStyle(fontSize: 16, height: 1.5),
+            ),
+            // ...
+          ],
+        ),
+      );
+    },
+  );
+}
+```
+
+**SHOWED Framework:**
+- **S (See)** - What do we see here?
+- **H (Happening)** - What is really happening?
+- **O (Our lives)** - How does this relate to our lives?
+- **W (Why)** - Why does this situation exist?
+- **E/D (Empower/Do)** - What can we do about it?
+
+### 3. Narrative Input
+
+Multi-line text field for deep reflective narratives.
+
+From `confirmation_screen.dart:157-170`:
+
+```dart
+TextField(
+  controller: _commentController,
+  maxLines: 10, // Increased for deep narratives
+  enabled: !isUploading,
+  decoration: InputDecoration(
+    labelText: 'Narrativa / Reflexión Crítica',
+    alignLabelWithHint: true,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    filled: true,
+    fillColor: Theme.of(context).colorScheme.surfaceVariant,
+  ),
+)
+```
+
+### 4. Upload State Management
+
+Shows loading overlay during post publication.
+
+From `confirmation_screen.dart:193-216`:
+
+```dart
+if (isUploading)
+  Container(
+    color: Colors.black45,
+    child: const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator.adaptive(
+            backgroundColor: Colors.white,
+          ),
+          SizedBox(height: 24),
+          Text(
+            'Guardando tu reflexión...',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    ),
+  )
+```
+
+## State Management
+
+### State Variables
+
+From `confirmation_screen.dart:15-22`:
+
+```dart
+class _ConfirmationScreenState extends State<ConfirmationScreen> {
+  final TextEditingController _commentController = TextEditingController();
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+}
+```
+
+<ResponseField name="_commentController" type="TextEditingController">
+  Controller for the narrative text field. Properly disposed in `dispose()` method.
+</ResponseField>
+
+### Reactive UI
+
+From `confirmation_screen.dart:112`:
+
+```dart
+final isUploading = context.watch<PostProvider>().isUploading;
+```
+
+Watches `PostProvider.isUploading` to reactively update UI during upload operations.
+
+## Methods
+
+### _onPublish()
+
+Validates input and publishes the post.
+
+```dart
+Future<void> _onPublish() async
+```
+
+**Flow:**
+1. Validates that comment is not empty
+2. Dismisses keyboard
+3. Calls `PostProvider.publishPost()`
+4. On success: pops navigation and shows success message
+5. On error: shows error snackbar
+
+#### Implementation
+
+From `confirmation_screen.dart:24-58`:
+
+```dart
+Future<void> _onPublish() async {
+  final comment = _commentController.text.trim();
+  if (comment.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Por favor, añade una narrativa sobre tu foto.')),
+    );
+    return;
+  }
+
+  FocusScope.of(context).unfocus();
+
+  final provider = Provider.of<PostProvider>(context, listen: false);
+
+  try {
+    await provider.publishPost(widget.imageFile, comment);
+    
+    if (!mounted) return;
+    
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('¡Voz compartida con éxito!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error al compartir: $e'),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
+}
+```
+
+### _showShowedGuide()
+
+Displays the SHOWED methodology guide in a modal bottom sheet.
+
+```dart
+void _showShowedGuide(BuildContext context)
+```
+
+<ParamField path="context" type="BuildContext" required>
+  Build context for showing the modal bottom sheet
+</ParamField>
+
+## UI Components
+
+### AppBar
+
+From `confirmation_screen.dart:115-124`:
+
+```dart
+AppBar(
+  title: const Text('Reflexiona y Comparte'),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.help_outline),
+      tooltip: 'Ayuda para reflexionar',
+      onPressed: () => _showShowedGuide(context),
+    )
+  ],
+)
+```
+
+### Help Button
+
+From `confirmation_screen.dart:149-153`:
+
+```dart
+TextButton.icon(
+  onPressed: () => _showShowedGuide(context),
+  icon: const Icon(Icons.psychology),
+  label: const Text('Ver preguntas de apoyo (SHOWED)'),
+)
+```
+
+### Publish Button
+
+From `confirmation_screen.dart:174-187`:
+
+```dart
+ElevatedButton.icon(
+  onPressed: isUploading ? null : _onPublish,
+  style: ElevatedButton.styleFrom(
+    padding: const EdgeInsets.symmetric(vertical: 18),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+  ),
+  icon: const Icon(Icons.cloud_upload_rounded),
+  label: const Text(
+    'Compartir Voz',
+    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  ),
+)
+```
+
+## User Flow
+
+1. User arrives from `HomeScreen` with captured photo
+2. Photo is displayed with Hero animation
+3. User can tap help icon to view SHOWED reflection guide
+4. User writes narrative in text field
+5. User taps "Compartir Voz" button
+6. Validation ensures narrative is not empty
+7. Loading overlay appears during upload
+8. On success: returns to home screen with success message
+9. On error: shows error message and stays on screen
+
+## Validation
+
+From `confirmation_screen.dart:25-31`:
+
+```dart
+final comment = _commentController.text.trim();
+if (comment.isEmpty) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Por favor, añade una narrativa sobre tu foto.')),
+  );
+  return;
+}
+```
+
+**Rules:**
+- Comment cannot be empty (after trimming whitespace)
+- Shows SnackBar if validation fails
+
+## Error Handling
+
+- Catches exceptions from `publishPost()`
+- Checks `mounted` before showing UI feedback
+- Displays user-friendly error messages in SnackBars
+- Does not dismiss screen on error (allows retry)
+
+## Design System
+
+**Layout:**
+- Padding: 24.0 all sides
+- Border radius: 16 for rounded corners
+- Image height: 350
+- TextField max lines: 10
+
+**Colors:**
+- Success: `Colors.green`
+- Error: `Colors.redAccent`
+- Loading overlay: `Colors.black45`
+- Surface: Theme-based `surfaceVariant`
+
+## Dependencies
+
+- `dart:io` - File operations
+- `flutter/material.dart` - UI framework
+- `provider` - State management
+- `PostProvider` - Post operations and state
+
+## Accessibility
+
+- Help icon has tooltip: "Ayuda para reflexionar"
+- Clear button labels
+- Disabled state during upload prevents double-submission
+- Keyboard dismissal on submit for better UX

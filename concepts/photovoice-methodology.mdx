@@ -1,0 +1,227 @@
+---
+title: "PhotoVoice Methodology"
+description: "Understanding the PhotoVoice participatory action research framework and how PhotoBoard implements it for community-driven social change"
+---
+
+## What is PhotoVoice?
+
+PhotoVoice is a participatory action research (PAR) methodology that empowers communities to identify, represent, and advocate for change through photography and narrative storytelling. Developed by Wang and Burris in the 1990s, it combines three key theoretical foundations:
+
+<CardGroup cols={3}>
+  <Card title="Critical Consciousness" icon="brain">
+    Based on Paulo Freire's concept of conscientização - developing awareness of social, political, and economic conditions
+  </Card>
+  <Card title="Feminist Theory" icon="users">
+    Centering marginalized voices and lived experiences as valid forms of knowledge
+  </Card>
+  <Card title="Documentary Photography" icon="camera">
+    Using visual media to capture and communicate social realities from the inside
+  </Card>
+</CardGroup>
+
+## Core Principles
+
+PhotoVoice is grounded in three fundamental goals:
+
+<Steps>
+  <Step title="Enable critical dialogue">
+    Participants record and reflect on community strengths and concerns through photography
+  </Step>
+  <Step title="Promote knowledge sharing">
+    Photos and narratives spark discussion about important community issues
+  </Step>
+  <Step title="Reach policymakers">
+    Visual evidence and participant voices influence decision-makers and create systemic change
+  </Step>
+</Steps>
+
+<Info>
+  **Key Insight**: PhotoVoice positions participants as experts of their own experience, shifting power dynamics in research and advocacy.
+</Info>
+
+## How PhotoBoard Implements PhotoVoice
+
+PhotoBoard translates the PhotoVoice methodology into a mobile application designed for participatory research projects. The implementation follows the complete PhotoVoice workflow:
+
+### 1. Ethical Foundation
+
+Before participants can capture images, PhotoBoard enforces ethical guidelines through an informed consent process (see [Ethical Guidelines](/concepts/ethical-guidelines)):
+
+```dart
+// home_screen.dart:19-77
+final bool? accepted = await showDialog<bool>(
+  context: context,
+  barrierDismissible: false,
+  builder: (BuildContext dialogContext) {
+    return AlertDialog(
+      title: const Text('Consentimiento Ético'),
+      content: // Three core ethical principles
+    );
+  },
+);
+```
+
+### 2. Visual Documentation
+
+Participants use their device camera to document community realities:
+
+<Note>
+  The app uses the native camera service (home_screen.dart:82-83) to capture authentic, participant-led photographs without filters or manipulation.
+</Note>
+
+```dart
+final cameraService = CameraService();
+final File? photoFile = await cameraService.takePhoto();
+```
+
+### 3. Critical Reflection
+
+After capturing an image, participants are guided through structured reflection using the [SHOWED framework](/concepts/showed-framework):
+
+<Accordion title="Why structured reflection matters">
+  Unguided photo-taking can result in surface-level documentation. The SHOWED framework ensures participants engage in critical analysis, connecting personal observations to systemic issues and action pathways.
+</Accordion>
+
+### 4. Narrative Creation
+
+Participants write deep narratives that contextualize their images:
+
+```dart
+// confirmation_screen.dart:157-170
+TextField(
+  controller: _commentController,
+  maxLines: 10, // Designed for substantive narratives
+  decoration: InputDecoration(
+    labelText: 'Narrativa / Reflexión Crítica',
+  ),
+)
+```
+
+The interface explicitly labels this as "Critical Reflection/Narrative" - not just a caption or comment, but a space for analytical thinking.
+
+### 5. Community Sharing
+
+Voices are shared collectively, creating a visual archive of community perspectives:
+
+```dart
+// home_screen.dart:180-257
+StreamBuilder<List<Post>>(
+  stream: postStream,
+  builder: (context, snapshot) {
+    // Real-time feed of community voices
+  },
+)
+```
+
+<Tip>
+  The feed displays posts as "Participante Anónimo" (Anonymous Participant) to protect identity while centering the message - a core PhotoVoice principle of "voice over identity".
+</Tip>
+
+### 6. Data Export for Research
+
+Researchers can export structured data for qualitative analysis:
+
+```dart
+// home_screen.dart:95-146
+List<List<dynamic>> csvData = [
+  ['Fecha', 'URL_Imagen', 'Narrativa_Reflexion', 'ID_Participante'],
+];
+
+for (var post in posts) {
+  csvData.add([
+    post.createdAt.toIso8601String(),
+    post.imageUrl,
+    post.comment,
+    post.id,
+  ]);
+}
+```
+
+The exported CSV enables:
+- Thematic coding of narratives
+- Visual discourse analysis
+- Longitudinal tracking of community concerns
+- Evidence synthesis for advocacy campaigns
+
+## Research Use Cases
+
+PhotoBoard's PhotoVoice implementation supports diverse research contexts:
+
+<AccordionGroup>
+  <Accordion title="Public Health Research">
+    Participants document environmental health hazards, access to healthcare, food security issues, or mental health resources in their communities. Narratives reveal how structural inequities manifest in daily life.
+  </Accordion>
+  
+  <Accordion title="Urban Planning & Development">
+    Community members photograph neighborhood assets, safety concerns, transportation barriers, or spaces of belonging. This gives planners direct insight into lived experience of the built environment.
+  </Accordion>
+  
+  <Accordion title="Youth Empowerment Programs">
+    Young people document their perspectives on education, identity, family, and community. The method validates youth as knowledge producers and stakeholders in decisions affecting their lives.
+  </Accordion>
+  
+  <Accordion title="Social Justice Advocacy">
+    Marginalized communities visually document systemic oppression, resilience strategies, and visions for change. Images and stories become powerful tools for consciousness-raising and policy advocacy.
+  </Accordion>
+</AccordionGroup>
+
+## Community Engagement Best Practices
+
+For facilitators implementing PhotoBoard in participatory research:
+
+<Steps>
+  <Step title="Co-design the research question">
+    Work with community partners to identify the issues participants will document. The research question should emerge from community priorities, not external agendas.
+  </Step>
+  
+  <Step title="Provide orientation workshops">
+    Train participants on:
+    - Ethical photography practices
+    - The SHOWED reflection framework
+    - How their contributions will be used
+    - Data security and participant rights
+  </Step>
+  
+  <Step title="Facilitate group discussions">
+    Hold regular sessions where participants present images and narratives to one another. Group dialogue deepens critical analysis and builds collective knowledge.
+  </Step>
+  
+  <Step title="Support action planning">
+    PhotoVoice is not just research - it's a catalyst for change. Work with participants to identify advocacy targets, develop messaging, and create action plans.
+  </Step>
+  
+  <Step title="Share ownership of outcomes">
+    Participants should have agency over how images/narratives are used. Co-author reports, co-present findings, and ensure community benefit from the research.
+  </Step>
+</Steps>
+
+<Warning>
+  **Critical Consideration**: PhotoVoice can expose participants to risk if documenting sensitive issues (e.g., police violence, immigration status, abuse). Always conduct risk assessments and ensure robust safety protocols.
+</Warning>
+
+## Theoretical Contributions
+
+PhotoBoard's implementation advances PhotoVoice methodology in several ways:
+
+1. **Scalability**: Traditional PhotoVoice requires substantial facilitation. The app's embedded ethical guidance and reflection framework enable broader participation.
+
+2. **Real-time Community Building**: The shared feed (home_screen.dart:180-257) creates immediate visibility across the participant community, fostering solidarity and collective analysis.
+
+3. **Digital Preservation**: Cloud storage ensures long-term archival of community knowledge that might otherwise be lost.
+
+4. **Research Integration**: CSV export functionality bridges participatory methods with qualitative analysis tools, making PhotoVoice more accessible to academic and institutional researchers.
+
+## Further Reading
+
+<CardGroup cols={2}>
+  <Card title="SHOWED Framework" icon="clipboard-question" href="/concepts/showed-framework">
+    Learn about the structured reflection method built into PhotoBoard's workflow
+  </Card>
+  <Card title="Ethical Guidelines" icon="shield-check" href="/concepts/ethical-guidelines">
+    Understand the ethical consent and safety protocols implemented in the app
+  </Card>
+</CardGroup>
+
+<Note>
+  **Academic Citation**: Wang, C., & Burris, M. A. (1997). Photovoice: Concept, methodology, and use for participatory needs assessment. *Health Education & Behavior*, 24(3), 369-387.
+</Note>
