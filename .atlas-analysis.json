@@ -14,7 +14,7 @@
           {
             "group": "Get Started",
             "pages": [
-              "introduction",
+              "index",
               "quickstart",
               "installation"
             ]
@@ -63,10 +63,11 @@
             ]
           },
           {
-            "group": "Screens",
+            "group": "UI Components",
             "pages": [
               "api/home-screen",
-              "api/confirmation-screen"
+              "api/confirmation-screen",
+              "api/post-card"
             ]
           }
         ]
@@ -88,10 +89,12 @@
     "PostRepository.fetchPosts()",
     "PostRepository.fetchPostsStream()",
     "PostProvider.publishPost()",
+    "PostProvider.fetchAllPosts()",
     "PostProvider.postsStream",
     "Post.fromJson()",
     "Post.toMap()",
     "HomeScreen",
-    "ConfirmationScreen"
+    "ConfirmationScreen",
+    "PostCard"
   ]
 }

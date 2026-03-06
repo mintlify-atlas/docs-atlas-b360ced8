@@ -1,0 +1,223 @@
+---
+title: PostCard Widget
+description: Reusable card component for displaying posts in the feed with image, narrative, and metadata
+---
+
+# PostCard Widget
+
+The `PostCard` widget is a reusable presentation component that displays a post with its associated image, narrative reflection, and metadata in an Instagram-style card format.
+
+## Overview
+
+`PostCard` is a stateless widget that renders posts in the feed with:
+- Anonymous participant identity protection
+- 1:1 aspect ratio image display
+- Formatted date and narrative text
+- Loading and error states for network images
+- Minimalist design with subtle borders
+
+## Class Definition
+
+```dart lib/features/posts/presentation/widgets/post_card.dart
+class PostCard extends StatelessWidget {
+  final Post post;
+
+  const PostCard({super.key, required this.post});
+  
+  @override
+  Widget build(BuildContext context) {
+    // Card implementation
+  }
+}
+```
+
+## Parameters
+
+<ParamField path="post" type="Post" required>
+  The post object to display, containing id, imageUrl, comment, and createdAt
+</ParamField>
+
+## Visual Structure
+
+The card consists of three main sections:
+
+### 1. Header Section
+
+```dart
+ListTile(
+  leading: CircleAvatar(
+    child: Icon(Icons.person_outline),
+  ),
+  title: Text('Participante Anónimo'),
+  trailing: Text(formattedDate),
+)
+```
+
+Displays:
+- Anonymous avatar icon (protects participant identity)
+- "Participante Anónimo" label
+- Formatted date (dd MMM yyyy format using `intl` package)
+
+### 2. Image Section
+
+```dart
+AspectRatio(
+  aspectRatio: 1 / 1,
+  child: Image.network(
+    post.imageUrl,
+    fit: BoxFit.cover,
+  ),
+)
+```
+
+Features:
+- 1:1 aspect ratio (square) following Instagram/BeReal pattern
+- Network image loading with progress indicator
+- Error handling with broken image icon
+- Rounded corners (20px border radius)
+
+### 3. Narrative Section
+
+```dart
+Padding(
+  padding: EdgeInsets.all(16.0),
+  child: Text(
+    post.comment,
+    style: TextStyle(
+      fontSize: 15,
+      height: 1.6,
+      letterSpacing: 0.3,
+    ),
+  ),
+)
+```
+
+Displays the participant's narrative reflection with:
+- Enhanced line height (1.6) for readability of reflective texts
+- Letter spacing for improved legibility
+- Adequate padding for comfortable reading
+
+## Design System
+
+### Colors
+
+- Background: Transparent (inherits from parent)
+- Border: `Colors.grey[850]` with 1.0px width
+- Avatar background: Primary color at 20% opacity
+- Text: White for primary text, `grey[400]` for metadata
+
+### Typography
+
+| Element | Font Size | Weight | Color |
+|---------|-----------|--------|-------|
+| Participant name | 14px | 600 | White |
+| Date | 12px | 400 | Grey 400 |
+| Narrative | 15px | 400 | White |
+
+### Spacing
+
+- Card margin: 16px horizontal, 12px vertical
+- Border radius: 20px (all corners)
+- Internal padding: 16px
+- Avatar radius: 16px
+
+## Image Loading States
+
+<Tabs>
+  <Tab title="Loading">
+    ```dart
+    loadingBuilder: (context, child, loadingProgress) {
+      if (loadingProgress == null) return child;
+      return Center(
+        child: CircularProgressIndicator(
+          color: Theme.of(context).colorScheme.primary,
+          strokeWidth: 2,
+        ),
+      );
+    }
+    ```
+    
+    Displays a centered progress indicator in the primary color while the image loads.
+  </Tab>
+  
+  <Tab title="Error">
+    ```dart
+    errorBuilder: (context, error, stackTrace) {
+      return Container(
+        color: Color(0xFF1E1E1E),
+        child: Center(
+          child: Icon(
+            Icons.broken_image_rounded,
+            size: 48,
+            color: Colors.grey,
+          ),
+        ),
+      );
+    }
+    ```
+    
+    Shows a broken image icon if the network request fails or the URL is invalid.
+  </Tab>
+  
+  <Tab title="Success">
+    Displays the post image with `BoxFit.cover` to fill the square aspect ratio container.
+  </Tab>
+</Tabs>
+
+## Usage Example
+
+```dart lib/features/posts/presentation/screens/home_screen.dart:251-254
+ListView.builder(
+  itemCount: posts.length,
+  itemBuilder: (context, index) {
+    final post = posts[index];
+    return PostCard(post: post);
+  },
+)
+```
+
+The `PostCard` is typically used within a `ListView.builder` in the `HomeScreen` to display the real-time feed of posts.
+
+## Ethical Design Considerations
+
+<Note>
+The PostCard implements several ethical design principles for participatory research:
+</Note>
+
+1. **Anonymity Protection**: Displays "Participante Anónimo" rather than user names
+2. **Focus on Voice**: Emphasizes the narrative content over author identity
+3. **Accessible Typography**: Enhanced line height and letter spacing for reflective texts
+4. **Minimalist Design**: Avoids visual clutter to center attention on the content
+
+## Dependencies
+
+```yaml pubspec.yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  intl: ^0.19.0  # Date formatting
+```
+
+The widget uses the `intl` package for locale-aware date formatting.
+
+## Related Components
+
+- [Post Model](/api/post-model) - Data structure displayed by PostCard
+- [HomeScreen](/api/home-screen) - Where PostCard is used in the feed
+- [Posts Feed Feature](/features/posts-feed) - Complete feed implementation
+
+## Customization
+
+To customize the appearance, you can:
+
+1. **Adjust aspect ratio**: Change `aspectRatio: 1 / 1` to other ratios
+2. **Modify border radius**: Update the `borderRadius` values
+3. **Change date format**: Modify the `DateFormat` pattern
+4. **Update colors**: Theme colors are derived from `Theme.of(context).colorScheme`
+
+Example custom date format:
+
+```dart
+// Change from dd MMM yyyy to MM/dd/yyyy
+final formattedDate = DateFormat('MM/dd/yyyy').format(post.createdAt);
+```

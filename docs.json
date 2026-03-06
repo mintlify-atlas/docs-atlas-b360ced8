@@ -75,10 +75,11 @@
             ]
           },
           {
-            "group": "Screens",
+            "group": "UI Components",
             "pages": [
               "api/home-screen",
-              "api/confirmation-screen"
+              "api/confirmation-screen",
+              "api/post-card"
             ]
           }
         ]
