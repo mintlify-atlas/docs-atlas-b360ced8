@@ -1,0 +1,97 @@
+{
+  "projectType": "frontend",
+  "projectName": "PhotoBoard",
+  "projectDescription": "A modern, minimalist Flutter mobile app for PhotoVoice methodology - capture moments, add reflective narratives, and share on a real-time community board for participatory action research.",
+  "theme": "almond",
+  "primaryColor": "#8B5CF6",
+  "lightColor": "#A78BFA",
+  "darkColor": "#7C3AED",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/photovoice-methodology",
+              "concepts/showed-framework",
+              "concepts/ethical-guidelines"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/camera-capture",
+              "features/posts-feed",
+              "features/data-export"
+            ]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "architecture/overview",
+              "architecture/clean-architecture",
+              "architecture/state-management"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core Services",
+            "pages": [
+              "api/camera-service"
+            ]
+          },
+          {
+            "group": "Posts Feature",
+            "pages": [
+              "api/post-model",
+              "api/post-repository",
+              "api/post-provider"
+            ]
+          },
+          {
+            "group": "Screens",
+            "pages": [
+              "api/home-screen",
+              "api/confirmation-screen"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Camera integration with ethical consent workflow",
+    "Real-time post feed with Supabase streaming",
+    "SHOWED framework guidance for reflective narratives",
+    "CSV data export for qualitative research",
+    "Clean architecture with feature-based modularization",
+    "Image upload and storage with Supabase"
+  ],
+  "publicApiSurface": [
+    "CameraService.takePhoto()",
+    "PostRepository.uploadImage()",
+    "PostRepository.createPost()",
+    "PostRepository.fetchPosts()",
+    "PostRepository.fetchPostsStream()",
+    "PostProvider.publishPost()",
+    "PostProvider.postsStream",
+    "Post.fromJson()",
+    "Post.toMap()",
+    "HomeScreen",
+    "ConfirmationScreen"
+  ]
+}
